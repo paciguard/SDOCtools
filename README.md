@@ -16,6 +16,7 @@ In Visual Studio 2022, open `ZTools.sln`, set `ZTools.Standalone` as the startup
 
 1. Choose **新建项目** to make a complete project copy of the Excel workbook, or **打开项目** to select an existing project copy.
 2. Use **在 Excel 中输入数据** for the original input template. All database sheets remain inside the workbook. Return with **保存并返回工作台** before running other operations.
+   You can also save and close Excel normally. The workbench detects the closed editor, reloads the last saved project file, and enables its controls again. A Chinese notice explains that unsaved changes cannot be recovered. If Excel reports a genuine save error, its editor remains open so you can fix the problem and retry.
 3. Use the equipment, motor/baseplate, PID, and section-material dialogs to review or edit the selected equipment row. Selection lists come from the original Excel data validation. Changes are written into the same project workbook.
 4. Click **计算项目数据** after opening a project or changing equipment inputs. Generation is blocked until calculation succeeds. Select devices and drawing types, then click **生成 DWG ＋ PDF**.
 5. Preview the result, zoom with the mouse wheel, pan by dragging, and download either format. A3 landscape PDF window, margins, and copy count are stored as a custom property of the project Excel workbook.
@@ -49,6 +50,7 @@ Known source-data gap: the `ZAG(LK6)_QWL` list references part `411.20`, absent 
 - `tools/verify_project.py`: checks standalone wiring and the published reference files.
 - `tests/standalone-api.ps1`: exercises Excel-backed forms, parameter and print-setting persistence, calculation, and two complete GA/PID/SEC output sets through the app.
 - `tests/startup.ps1`: checks detached executable launch, repeat launches, safe rebuild preparation, the Visual Studio address, and startup error reporting without opening Excel.
+- `tests/EditorLifecycleSmoke.csproj`: requires desktop Excel; checks save-and-return, saved/closed workbook recovery, disconnected Excel, save-error retry, and preservation of another open workbook, using private workbook copies.
 - `tests/DrawingSmoke.csproj`: regenerates vector PDFs from six saved DWG files for visual regression review.
 - `tests/WorkbookSmoke.csproj`: detailed workbook/SEC regression checks; requires the .NET Framework 4.8 targeting pack.
 

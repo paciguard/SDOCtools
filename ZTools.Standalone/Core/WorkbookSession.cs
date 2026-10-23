@@ -31,6 +31,8 @@ namespace ZTools.Engine
                 Book = Application.Workbooks.Open(FilePath, UpdateLinks: 0, ReadOnly: false, Password: "123", WriteResPassword: "123", IgnoreReadOnlyRecommended: true);
                 if ((bool)Book.ReadOnly) throw new IOException("项目工作簿已被打开或锁定，请先关闭后再操作。");
                 foreach (string name in RequiredSheets) { dynamic sheet = Book.Worksheets[name]; Release((object)sheet); }
+                // Manual Excel editing must retain its normal save/close prompts.
+                Application.DisplayAlerts = visible;
             }
             catch { Dispose(); throw; }
         }
@@ -42,6 +44,29 @@ namespace ZTools.Engine
             Book.Worksheets[sheetName].Activate();
         }
         internal void Save() { Book.Save(); }
+        internal bool IsOpen
+        {
+            get
+            {
+                if (Book == null || Application == null) return false;
+                try { return Application.Workbooks.Count > 0 && !string.IsNullOrEmpty((string)Book.FullName); }
+                catch (Exception error) when (IsDisconnected(error)) { return false; }
+                // A cell edit or a modal Excel dialog temporarily rejects calls.
+                // This is still a live editor, so never discard its session.
+                catch (COMException error) when (error.HResult == unchecked((int)0x80010001) || error.HResult == unchecked((int)0x8001010A)) { return true; }
+            }
+        }
+        internal static bool IsDisconnected(Exception error)
+        {
+            if (error is InvalidComObjectException) return true;
+            var com = error as COMException;
+            if (com == null) return false;
+            return com.HResult == unchecked((int)0x80010108) // RPC_E_DISCONNECTED
+                || com.HResult == unchecked((int)0x800401FD) // CO_E_OBJNOTCONNECTED
+                || com.HResult == unchecked((int)0x800706BA) // RPC server unavailable
+                || com.HResult == unchecked((int)0x80010007) // RPC_E_SERVER_DIED
+                || com.HResult == unchecked((int)0x80010012); // RPC_E_SERVER_DIED_DNE
+        }
         internal string Cell(string sheet, string address) => Vb.Text(Book.Worksheets[sheet].Range[address].Value2);
         internal int ValidateInput()
         {
@@ -68,19 +93,28 @@ namespace ZTools.Engine
         }
         public void Dispose()
         {
-            try { if (Book != null) Book.Close(false); }
-            finally
+            // Clear owned references first: a disconnected Excel process must not
+            // make disposal fail repeatedly or hide the original save/open error.
+            object book = Book, application = Application;
+            Book = null; Application = null;
+            try { if (book != null) ((dynamic)book).Close(false); }
+            catch (Exception error) when (error is COMException || error is InvalidComObjectException) { System.Diagnostics.Trace.TraceWarning(error.ToString()); }
+            finally { Release(book); }
+            try
             {
-                Release((object)Book); Book = null;
-                try { if (Application != null) Application.Quit(); }
-                finally { Release((object)Application); Application = null; }
+                // The user may have opened another workbook in the visible
+                // instance. Leave it open rather than quitting their Excel.
+                if (application != null && ((dynamic)application).Workbooks.Count == 0) ((dynamic)application).Quit();
             }
+            catch (Exception error) when (error is COMException || error is InvalidComObjectException) { System.Diagnostics.Trace.TraceWarning(error.ToString()); }
+            finally { Release(application); }
             // The session owns this private Excel instance only.
             GC.Collect(); GC.WaitForPendingFinalizers();
         }
         private static void Release(object value)
         {
-            if (value != null && Marshal.IsComObject(value)) Marshal.FinalReleaseComObject(value);
+            try { if (value != null && Marshal.IsComObject(value)) Marshal.FinalReleaseComObject(value); }
+            catch (Exception error) when (error is COMException || error is InvalidComObjectException) { System.Diagnostics.Trace.TraceWarning(error.ToString()); }
         }
     }
 

@@ -29,3 +29,13 @@ Startup and rebuild follow-up — 2026-10-23:
 - The publication script also closed its own idle running published executable before replacing the package. It identifies the output directory and refuses to interrupt an open Excel editor. Startup tests verified that preparation leaves a different application copy running.
 - The Visual Studio address was honored; invalid startup settings produced a controlled exit code 1 and a readable error log. Startup tests run in Windows CI without opening Excel.
 - Original reference hashes remain unchanged. Calculation and drawing-engine source were not changed in this follow-up.
+
+Excel editor recovery follow-up — 2026-10-23:
+
+- Reproduced the reported RPC_E_DISCONNECTED (0x80010108) at WorkbookSession.Save after saving and closing Excel, followed by Workspace.Finish. Old disposal also threw, leaving the editing flag set and other controls disabled.
+- Desktop-Excel regression tests now pass for manual save followed by return, save/close followed by return, automatic detection of a closed workbook, and a disconnected test-owned Excel process. Recovery reloads the last saved project file and explicitly warns that unsaved edits cannot be recovered.
+- A simulated disk-full save failure preserves the live editor for retry. Returning from the project also leaves another workbook opened in that Excel instance intact. Repeated disposal succeeds without rethrowing stale COM errors.
+- Browser verification used the Visual Studio Debug application on port 5100. After the private test workbook was saved and closed, the Chinese notice appeared automatically, the saved equipment tag was refreshed, and input/calculation/parameter controls were enabled. The screenshot is docs/images/excel-editor-recovery.png.
+- The same recovered Debug session passed all four parameter dialogs, input/print-setting save-and-restore checks, calculation of the six equipment rows, and generation of six GA/PID/SEC DWG/PDF pairs for two selected rows.
+- Both Release and Debug application builds succeeded, the .NET Framework 4.8 calculation harness still compiles, and startup regression checks pass. Windows CI compiles the new editor harness; executing its Excel scenarios requires a machine with desktop Excel.
+- The source ZTools.xls already had a local owner modification when this follow-up began. That file is preserved as found, and is excluded from the code-fix commit; it is not reset to the earlier repository snapshot. All 16 current reference files are checked against a separate before/after snapshot for this fix.

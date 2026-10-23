@@ -1,13 +1,13 @@
 import * as THREE from './vendor/three.module.js';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
-let token='',state=null,selected=0,checked=new Set(),busy=false,closed=false,parameterGroup=null,formFields=[],drawing=null,currentFile=null;
+let token='',state=null,selected=0,checked=new Set(),busy=false,closed=false,parameterGroup=null,formFields=[],drawing=null,currentFile=null,operationVersion=0,checkingEditor=false;
 const viewport=$('#viewport'),dialog=$('#dialog');
 let renderer,scene,camera,content,frame,drag=null;
 function message(text){$('#message').textContent=text;$('#message').hidden=!text;}
 async function json(url,options){const response=await fetch(url,options);const data=await response.json();if(!response.ok)throw new Error(data.error||'操作失败');return data;}
 async function action(command,body={}){return json('/api/action/'+command,{method:'POST',headers:{'Content-Type':'application/json','X-CFL-Token':token},body:JSON.stringify(body)});}
-async function work(label,fn){if(busy)return;busy=true;const start=Date.now();$('#busy').hidden=false;$('#busyText').textContent=label;$$('button').forEach(b=>b.disabled=true);const timer=setInterval(()=>$('#elapsed').textContent=Math.floor((Date.now()-start)/1000)+' 秒',1000);try{message('');return await fn();}catch(error){message(error.message);}finally{clearInterval(timer);$('#busy').hidden=true;$('#elapsed').textContent='';busy=false;$$('button').forEach(b=>b.disabled=false);updateEditing();}}
-function updateEditing(){if(closed){$$('button').forEach(b=>b.disabled=true);return;}if(!state)return;$('#finishExcel').hidden=!state.editing;$('#editExcel').hidden=state.editing;if(!busy){$('#generate').disabled=!state.job||state.needsCalculation;if(!state.job)$$('[data-parameters],[data-sheet],[data-action="calculate"],[data-action="utility"],#editExcel,#printSettings').forEach(b=>b.disabled=true);if(state.editing)$$('button').filter(b=>b.id!=='finishExcel').forEach(b=>b.disabled=true);}}
+async function work(label,fn){if(busy)return;busy=true;operationVersion++;const start=Date.now();$('#busy').hidden=false;$('#busyText').textContent=label;$$('button').forEach(b=>b.disabled=true);const timer=setInterval(()=>$('#elapsed').textContent=Math.floor((Date.now()-start)/1000)+' 秒',1000);try{message('');return await fn();}catch(error){message(error.message);}finally{clearInterval(timer);$('#busy').hidden=true;$('#elapsed').textContent='';busy=false;$$('button').forEach(b=>b.disabled=false);updateEditing();}}
+function updateEditing(){if(closed){$$('button').forEach(b=>b.disabled=true);return;}if(!state)return;$('#finishExcel').hidden=!state.editing;$('#editExcel').hidden=state.editing;if(!busy){$$('button').forEach(b=>b.disabled=false);$('#generate').disabled=!state.job||state.needsCalculation;if(!state.job)$$('[data-parameters],[data-sheet],[data-action="calculate"],[data-action="utility"],#editExcel,#printSettings').forEach(b=>b.disabled=true);if(state.editing)$$('button').filter(b=>b.id!=='finishExcel').forEach(b=>b.disabled=true);}}
 function updateSelected(){const row=state?.rows?.find(r=>r.index===selected);$('#selectedTag').textContent=row?.tag||'—';$('#selectedTemplate').textContent=row?.template||'—';$('#selectedList').textContent=row?.list||'—';$$('.device').forEach(e=>e.classList.toggle('active',Number(e.dataset.index)===selected));}
 function render(data){
  const oldJob=state?.job;state=data;
@@ -17,7 +17,7 @@ function render(data){
  if(!root.children.length){const empty=document.createElement('div');empty.className='no-device';empty.textContent=state.job?'请在 Excel 中填写设备输入行':'尚未打开项目';root.append(empty);}
  $('#log').textContent=(state.log||[]).join('\n');$('#activity').textContent=state.editing?'Excel 编辑中':state.job?(state.needsCalculation?'请计算项目数据':'已连接项目 Excel'):'等待选择项目';
  $('#templates').replaceChildren();for(const template of state.templates||[]){const line=document.createElement('div');line.textContent=template.kind+' · '+(template.exists?template.format.replace('.',''):'未找到模板');$('#templates').append(line);}
- updateSelected();updateEditing();loadFiles();
+ if(state.notice)message(state.notice);updateSelected();updateEditing();loadFiles();
 }
 async function loadFiles(){try{const files=await json('/api/files');$('#fileCount').textContent=files.length;$('#files').replaceChildren();for(const file of files){const line=document.createElement('div');line.className='file';const title=document.createElement('span');title.textContent=file.kind+' · '+file.name;const preview=document.createElement('button');preview.textContent='预览';preview.addEventListener('click',()=>work('正在载入图纸',()=>showFile(file.id)));line.append(title,preview);for(const format of ['dwg','pdf']){const link=document.createElement('a');link.textContent=format.toUpperCase();link.href='/api/file/'+file.id+'/'+format;line.append(link);}$('#files').append(line);}}catch(e){message(e.message);}}
 function initViewer(){
@@ -61,3 +61,6 @@ $('#generate').addEventListener('click',()=>work('正在生成 DWG 与 PDF',asyn
 $$('[data-template]').forEach(b=>b.addEventListener('click',()=>work('正在载入模板',async()=>{$$('[data-template]').forEach(x=>x.classList.toggle('active',x===b));currentFile=null;showDrawing(await json('/api/template/'+b.dataset.template));})));
 $('#fit').onclick=()=>fit();
 try{const initial=await json('/api/state');token=initial.token;render(initial.data);}catch(error){message('无法连接凯乐出图程序：'+error.message);}
+// Closing Excel is also a valid return path. Ignore stale responses if a user
+// operation started while the check was in flight; they must not replace it.
+setInterval(async()=>{if(checkingEditor||busy||closed||!state?.editing||document.visibilityState!=='visible')return;checkingEditor=true;const version=operationVersion;try{const latest=await json('/api/state');if(!busy&&operationVersion===version&&!latest.data.editing){token=latest.token;render(latest.data);}}catch{}finally{checkingEditor=false;}},3000);

@@ -1,10 +1,10 @@
-param([string]$Workbook)
+param([string]$Workbook,[int]$Port=5099)
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $temp = Join-Path $repoRoot '.tools'
 function Read-Api([string]$Endpoint) {
     $response = Join-Path $temp 'api-test-response.json'
-    & curl.exe --noproxy '*' --silent --show-error --fail-with-body --max-time 180 "http://127.0.0.1:5099$Endpoint" --output $response
+    & curl.exe --noproxy '*' --silent --show-error --fail-with-body --max-time 180 "http://127.0.0.1:$Port$Endpoint" --output $response
     if($LASTEXITCODE -ne 0){throw (Get-Content $response -Raw)}
     return Get-Content $response -Raw | ConvertFrom-Json
 }
@@ -14,7 +14,7 @@ function Call-Api([string]$Command,$Body) {
     $request = Join-Path $temp 'api-test-request.json'
     $response = Join-Path $temp 'api-test-response.json'
     [IO.File]::WriteAllText($request,($Body|ConvertTo-Json -Depth 12),[Text.UTF8Encoding]::new($false))
-    & curl.exe --noproxy '*' --silent --show-error --fail-with-body --max-time 180 -H "X-CFL-Token: $token" -H 'Content-Type: application/json' --data-binary "@$request" "http://127.0.0.1:5099/api/action/$Command" --output $response
+    & curl.exe --noproxy '*' --silent --show-error --fail-with-body --max-time 180 -H "X-CFL-Token: $token" -H 'Content-Type: application/json' --data-binary "@$request" "http://127.0.0.1:$Port/api/action/$Command" --output $response
     if($LASTEXITCODE -ne 0){throw (Get-Content $response -Raw)}
     return Get-Content $response -Raw | ConvertFrom-Json
 }

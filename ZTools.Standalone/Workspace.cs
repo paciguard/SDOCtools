@@ -19,14 +19,26 @@ public sealed class StaWorker:IDisposable
 }
 public sealed class Workspace:IDisposable
 {
-    string workbookPath,editorSheet;WorkbookSession editor;object cachedRows=Array.Empty<object>();SheetOptions currentOptions=new();bool needsCalculation=true;
+    string workbookPath,editorSheet,notice;WorkbookSession editor;object cachedRows=Array.Empty<object>();SheetOptions currentOptions=new();bool needsCalculation=true,reloadAfterEditorClosed;
     public ConcurrentQueue<string> Log {get;}=new();
     public string LastOutput {get;private set;}
     public void Report(string text) {Log.Enqueue(text);while(Log.Count>120)Log.TryDequeue(out _);}
-    public void EnsureIdle() {if(editor!=null)throw new InvalidOperationException("请先完成 Excel 编辑，并单击“保存并返回”。");}
+    public void EnsureIdle() {RecoverClosedEditor();if(editor!=null)throw new InvalidOperationException("请先完成 Excel 编辑，并单击“保存并返回”。");}
+    void RecoverClosedEditor()
+    {
+        if(editor!=null&&!editor.IsOpen)RecoverEditor();
+    }
+    void RecoverEditor()
+    {
+        var previous=editor;editor=null;editorSheet=null;needsCalculation=true;reloadAfterEditorClosed=true;
+        previous?.Dispose();
+        notice="Excel 已关闭或连接中断，已返回工作台。当前数据来自项目文件中最后保存的内容；未保存的修改无法恢复，请核对后重新计算。";
+        Report(notice);
+    }
     WorkbookSession Open() {EnsureIdle();if(workbookPath==null)throw new InvalidOperationException("请先新建或打开项目。");return new WorkbookSession(workbookPath,false);}
     public object State(bool refresh=false)
     {
+        RecoverClosedEditor();refresh|=reloadAfterEditorClosed;
         SheetOptions options=currentOptions;
         if(workbookPath!=null&&editor==null&&refresh)
         {
@@ -35,37 +47,53 @@ public sealed class Workspace:IDisposable
             var results=(object[,])book.Book.Worksheets["Sheet1"].Range["CA40:CF69"].Value2;
             var rows=new List<object>();
             for(int k=0;k<30;k++)if(!string.IsNullOrWhiteSpace(Vb.Text(input[k+1,11])))rows.Add(new {index=k,tag=Vb.Text(input[k+1,1]),model=Vb.Text(input[k+1,11]),material=Vb.Text(input[k+1,12]),template=Vb.Text(results[k+1,1]),list=Vb.Text(results[k+1,3])});
-            cachedRows=rows;options=currentOptions=ReadOptions(book);
+            cachedRows=rows;options=currentOptions=ReadOptions(book);reloadAfterEditorClosed=false;
         }
-        return new {job=workbookPath,editing=editor!=null,needsCalculation,rows=cachedRows,options,output=LastOutput,log=Log.ToArray(),templates=new[]{"GA","PID","SEC"}.Select(k=>new{kind=k,path=Template(k),exists=File.Exists(Template(k)),format=Path.GetExtension(Template(k)).ToUpperInvariant()})};
+        return new {job=workbookPath,editing=editor!=null,needsCalculation,notice,rows=cachedRows,options,output=LastOutput,log=Log.ToArray(),templates=new[]{"GA","PID","SEC"}.Select(k=>new{kind=k,path=Template(k),exists=File.Exists(Template(k)),format=Path.GetExtension(Template(k)).ToUpperInvariant()})};
     }
     public static string Template(string kind)
     {return Path.Combine(ProjectPaths.Templates,kind+".dwg");}
     public object Create(string parent)
     {
         EnsureIdle();if(string.IsNullOrEmpty(parent)){using var picker=new FolderBrowserDialog {Description="请选择项目保存位置"};if(picker.ShowDialog()!=DialogResult.OK)return State();parent=picker.SelectedPath;}
-        workbookPath=Path.Combine(ProjectPaths.CreateJob(parent),"ZTools.xls");LastOutput=null;needsCalculation=true;Report("项目已创建："+workbookPath);return State(true);
+        workbookPath=Path.Combine(ProjectPaths.CreateJob(parent),"ZTools.xls");LastOutput=null;needsCalculation=true;notice=null;Report("项目已创建："+workbookPath);return State(true);
     }
     public object Select(string path)
     {
         EnsureIdle();if(string.IsNullOrEmpty(path)){using var picker=new OpenFileDialog{Title="打开项目 Excel 副本",Filter="项目工作簿|ZTools.xls"};if(picker.ShowDialog()!=DialogResult.OK)return State();path=picker.FileName;}
         path=Path.GetFullPath(path);if(ProjectPaths.IsSourceWorkbook(path))throw new InvalidOperationException("请打开项目副本。原始模板通过“新建项目”完整复制后使用。");
         using(var test=new WorkbookSession(path,false)) { }
-        workbookPath=path;LastOutput=null;needsCalculation=true;Report("已打开项目："+path);return State(true);
+        workbookPath=path;LastOutput=null;needsCalculation=true;notice=null;Report("已打开项目："+path);return State(true);
     }
     public object Edit(string sheet)
     {
         EnsureIdle();if(!new[]{"input","PID","Sec-List","Sheet1","Utility"}.Contains(sheet))throw new InvalidOperationException("无效的编辑工作表。");
         if(workbookPath==null)throw new InvalidOperationException("请先新建或打开项目。");
-        editor=new WorkbookSession(workbookPath,true);editor.ShowInput(sheet);editorSheet=sheet;Report("已打开 Excel："+sheet);return State();
+        var opened=new WorkbookSession(workbookPath,true);
+        try{opened.ShowInput(sheet);}catch{opened.Dispose();throw;}
+        editor=opened;editorSheet=sheet;notice=null;Report("已打开 Excel："+sheet);return State();
     }
     public object Finish()
     {
-        if(editor!=null){editor.Save();editor.Dispose();editor=null;if(editorSheet=="input")needsCalculation=true;Report("Excel 数据已保存。");}return State(true);
+        RecoverClosedEditor();
+        if(editor!=null)
+        {
+            try{editor.Save();}
+            catch(Exception error) when(WorkbookSession.IsDisconnected(error)){RecoverEditor();return State(true);}
+            catch(COMException error)
+            {
+                System.Diagnostics.Trace.TraceWarning(error.ToString());
+                throw new InvalidOperationException("未能保存项目 Excel，编辑窗口仍保持打开。请在 Excel 中完成保存后，重试“保存并返回工作台”。",error);
+            }
+            // A genuine save failure leaves the live editor available for retry.
+            var saved=editor;editor=null;if(editorSheet=="input")needsCalculation=true;
+            editorSheet=null;saved.Dispose();notice=null;Report("Excel 数据已保存。");
+        }
+        return State(true);
     }
     public object Calculate(bool utility=false)
     {
-        using(var book=Open()){var engine=new SubmissionEngine(book,Report);if(utility)engine.CalculateUtility();else{engine.Calculate();needsCalculation=false;}}return State(true);
+        using(var book=Open()){var engine=new SubmissionEngine(book,Report);if(utility)engine.CalculateUtility();else{engine.Calculate();needsCalculation=false;notice=null;}}return State(true);
     }
     public object Refresh(){EnsureIdle();needsCalculation=true;return State(true);}
     public ParameterForm Parameters(string group,int index)
@@ -154,5 +182,5 @@ public sealed class Workspace:IDisposable
         if(LastOutput==null)throw new InvalidOperationException("尚未生成图纸。");var paths=Directory.GetFiles(LastOutput,"*.dwg",SearchOption.AllDirectories);
         if(id<0||id>=paths.Length)throw new InvalidOperationException("图纸不存在。");return Path.ChangeExtension(paths[id],extension);
     }
-    public void Dispose(){editor?.Dispose();editor=null;}
+    public void Dispose(){var previous=editor;editor=null;previous?.Dispose();}
 }
