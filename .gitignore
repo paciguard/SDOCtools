@@ -21,6 +21,7 @@ tests/standalone-*.log
 tests/standalone-*.png
 application.log
 application-error.log
+application-*.log
 plot.log
 tests/section-host.*
 tests/*-output/

@@ -24,13 +24,16 @@ if(args.Contains("--smoke"))
         File.WriteAllLines(Path.Combine(job,"standalone-smoke.log"),log);return true;
     });return;
 }
+try
+{
+string url=StartupSupport.Address(args);bool openBrowser=!args.Contains("--no-browser");
+if(await StartupSupport.ReopenExisting(url,openBrowser))return;
 string webroot=Path.Combine(AppContext.BaseDirectory,"wwwroot");
 if(!Directory.Exists(webroot))webroot=Path.Combine(ProjectPaths.Root,"ZTools.Standalone","wwwroot");
 var builder=WebApplication.CreateBuilder(new WebApplicationOptions{Args=Array.Empty<string>(),ContentRootPath=Path.GetDirectoryName(webroot),WebRootPath=webroot});
-int port=5099;int portIndex=Array.IndexOf(args,"--port");if(portIndex>=0&&portIndex+1<args.Length)port=int.Parse(args[portIndex+1]);
-string url="http://127.0.0.1:"+port;builder.WebHost.UseUrls(url);
+builder.WebHost.UseUrls(url);
 builder.Services.ConfigureHttpJsonOptions(o=>o.SerializerOptions.PropertyNamingPolicy=System.Text.Json.JsonNamingPolicy.CamelCase);
-var app=builder.Build();string token=Convert.ToHexString(RandomNumberGenerator.GetBytes(24));
+await using var app=builder.Build();string token=Convert.ToHexString(RandomNumberGenerator.GetBytes(24));
 app.Use(async(context,next)=>
 {
     if(context.Request.Path.StartsWithSegments("/api")&&context.Request.Method!="GET"&&context.Request.Headers["X-CFL-Token"]!=token)
@@ -38,6 +41,7 @@ app.Use(async(context,next)=>
     try{await next();}catch(Exception ex){context.Response.StatusCode=400;await context.Response.WriteAsJsonAsync(new{error=ex.Message});}
 });
 app.UseDefaultFiles();app.UseStaticFiles();
+app.MapGet("/api/health",()=>new{application=StartupSupport.ApplicationId,version=typeof(Workspace).Assembly.GetName().Version?.ToString(),processId=Environment.ProcessId,executable=Environment.ProcessPath,baseDirectory=AppContext.BaseDirectory});
 app.MapPost("/api/action/close",async()=>
 {
     await sta.Run(()=>{workspace.EnsureIdle();return true;});
@@ -69,5 +73,15 @@ app.MapGet("/api/template/{kind}",(string kind)=>
     var notices=new List<string>();return DrawingOutput.Scene(DrawingOutput.Read(Workspace.Template(kind),notices),new());
 });
 app.Lifetime.ApplicationStopping.Register(()=>sta.Run(()=>{workspace.Dispose();return true;}).GetAwaiter().GetResult());
-if(!args.Contains("--no-browser"))app.Lifetime.ApplicationStarted.Register(()=>Process.Start(new ProcessStartInfo(url){UseShellExecute=true}));
-await app.RunAsync();
+try{await app.StartAsync();}
+catch(IOException)
+{
+    // Two launches can arrive before either has finished starting its listener.
+    // Recheck the identified app after a bind conflict, without closing its job.
+    if(await StartupSupport.ReopenExisting(url,openBrowser))return;
+    throw;
+}
+if(openBrowser)StartupSupport.OpenBrowser(url);
+await app.WaitForShutdownAsync();
+}
+catch(Exception error){StartupSupport.Report(error,args.Contains("--no-browser"));Environment.ExitCode=1;}

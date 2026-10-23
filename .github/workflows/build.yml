@@ -20,6 +20,9 @@ jobs:
         run: ./tools/build.ps1
       - name: Verify standalone package
         run: python tools/verify_project.py
+      - name: Verify application startup
+        shell: pwsh
+        run: ./tests/startup.ps1
       - uses: actions/upload-artifact@v4
         with:
           name: CFL-SubmitTools-Windows

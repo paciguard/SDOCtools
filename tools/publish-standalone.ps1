@@ -2,13 +2,16 @@ param([ValidateSet('Debug','Release')][string]$Configuration='Release')
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path -Parent $PSScriptRoot
 $destination=Join-Path $projectRoot 'dist\CFL-SubmitTools'
+& (Join-Path $PSScriptRoot 'prepare-build.ps1') -OutputDirectory $destination
 $env:MSBUILDDISABLENODEREUSE='1'
+$env:DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE='true'
+$env:DOTNET_CLI_TELEMETRY_OPTOUT='1'
 New-Item -ItemType Directory -Force -Path (Join-Path $projectRoot '.tools')|Out-Null
 function Invoke-Dotnet([string[]]$Arguments,[string]$Phase){
     $log=Join-Path $projectRoot ('.tools/build-'+$Phase+'-'+[Guid]::NewGuid().ToString('N'))
     $argumentLine=($Arguments|ForEach-Object {'"'+$_+'"'}) -join ' '
     $process=Start-Process dotnet -ArgumentList $argumentLine -WorkingDirectory $projectRoot -WindowStyle Hidden -PassThru -RedirectStandardOutput ($log+'.log') -RedirectStandardError ($log+'.err')
-    $process.WaitForExit()
+    if(-not $process.WaitForExit(1200000)){throw "dotnet $Phase did not finish within 20 minutes."}
     Get-Content ($log+'.log')
     Get-Content ($log+'.err')
     if($process.ExitCode -ne 0){throw "dotnet $Phase failed with exit code $($process.ExitCode)."}

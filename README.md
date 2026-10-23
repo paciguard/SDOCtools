@@ -8,6 +8,10 @@ Requires Windows x64, Microsoft Excel desktop, a WebGL-capable browser, and the 
 
 Run `powershell -ExecutionPolicy Bypass -File tools/build.ps1`, then launch `dist/CFL-SubmitTools/Start.ps1` or `ZTools.Standalone.exe` inside that published folder. Keep its `Referrings` and `wwwroot` folders alongside the executable. The interface opens at http://127.0.0.1:5099. Third-party JavaScript is bundled locally; drawing generation does not require an internet connection.
 
+Repeated launches reopen the current application and preserve its project session. The build script closes an idle running copy of the same output folder before replacing its files. If Excel is open for input, save and return to the workbench first; rebuild will refuse to interrupt editing.
+
+In Visual Studio 2022, open `ZTools.sln`, set `ZTools.Standalone` as the startup project, and run its **ZTools.Standalone** profile. That profile uses http://127.0.0.1:5100 so it can run alongside the published application. Regular build output also includes `wwwroot` and `Referrings`; keep the whole output folder together. If startup fails, the app shows a Chinese error and writes `application-error.log` beside the executable (or under `%LOCALAPPDATA%/CFL/SubmitTools` if the folder is not writable). Custom addresses use `--port <number>`; close those instances with **退出程序** before rebuilding.
+
 ## Workflow
 
 1. Choose **新建项目** to make a complete project copy of the Excel workbook, or **打开项目** to select an existing project copy.
@@ -44,6 +48,7 @@ Known source-data gap: the `ZAG(LK6)_QWL` list references part `411.20`, absent 
 - `tools/verify_sources.py`: verifies original-reference hashes against the selected snapshot. Current source snapshot: `migration/source-manifest-20261023.json`.
 - `tools/verify_project.py`: checks standalone wiring and the published reference files.
 - `tests/standalone-api.ps1`: exercises Excel-backed forms, parameter and print-setting persistence, calculation, and two complete GA/PID/SEC output sets through the app.
+- `tests/startup.ps1`: checks detached executable launch, repeat launches, safe rebuild preparation, the Visual Studio address, and startup error reporting without opening Excel.
 - `tests/DrawingSmoke.csproj`: regenerates vector PDFs from six saved DWG files for visual regression review.
 - `tests/WorkbookSmoke.csproj`: detailed workbook/SEC regression checks; requires the .NET Framework 4.8 targeting pack.
 

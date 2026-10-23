@@ -19,3 +19,13 @@ Passed checks:
 Coverage limits: these standalone output checks cover the two selected supplied equipment configurations, not every model and template combination. The viewer/PDF output is monochrome and uses an installed Chinese font. Import notices for legacy non-graphical objects are recorded per output batch; unsupported visible PDF entities stop export. The original database still lacks part 411.20 referenced by ZAG(LK6)_QWL; that case reports a data error.
 
 Earlier workbook and native AutoCAD regression records remain historical evidence for the calculation migration; they are not presented as standalone drawing-engine validation.
+
+Startup and rebuild follow-up — 2026-10-23:
+
+- Reproduced the executable crash by launching a second instance while the original service occupied port 5099. The old executable exited with code -532462766 and an unhandled address-in-use exception.
+- The corrected executable identifies and reopens the existing application. The second process exits with code 0; the original process and session token remain unchanged.
+- Both normal Release build output and the published package launched from private copied folders with a different working directory. Their web assets loaded and their DWG paths resolved to the copied Referrings folder.
+- A real Visual Studio 2022 MSBuild Rebuild passed with warnings treated as errors while the Release executable was running on port 5100. Build preparation closed that idle copy before cleaning or replacing its files.
+- The publication script also closed its own idle running published executable before replacing the package. It identifies the output directory and refuses to interrupt an open Excel editor. Startup tests verified that preparation leaves a different application copy running.
+- The Visual Studio address was honored; invalid startup settings produced a controlled exit code 1 and a readable error log. Startup tests run in Windows CI without opening Excel.
+- Original reference hashes remain unchanged. Calculation and drawing-engine source were not changed in this follow-up.
