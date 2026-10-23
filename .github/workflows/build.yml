@@ -26,6 +26,9 @@ jobs:
       - name: Verify application startup
         shell: pwsh
         run: ./tests/startup.ps1
+      - name: Verify embedded templates without external source files
+        shell: pwsh
+        run: ./tests/embedded-templates.ps1
       - name: Compile Excel editor regression tests
         shell: pwsh
         run: dotnet build tests/EditorLifecycleSmoke.csproj --configuration Release --disable-build-servers /p:UseSharedCompilation=false /nr:false /m:1

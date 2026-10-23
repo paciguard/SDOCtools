@@ -16,11 +16,18 @@ internal static class EditorLifecycleSmoke
         string source=Path.Combine(root,"Referrings","Ztools","ZTools.xls");
         string folder=Path.Combine(root,"tests","editor-lifecycle-output",Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(folder);
-        string job=Path.Combine(folder,"ZTools.xls");File.Copy(source,job);
+        string job=null;
         var workspace=new Workspace();
         try
         {
-            workspace.Select(job);workspace.Edit("input");
+            // Verify extraction before Excel can update the workbook's file metadata.
+            var paths=typeof(Workspace).Assembly.GetType("ZTools.Engine.ProjectPaths",true);
+            string projectFolder=(string)paths.GetMethod("CreateJob").Invoke(null,new object[]{folder});
+            job=Path.Combine(projectFolder,"ZTools.xls");
+            if(!System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(source)).SequenceEqual(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(job))))throw new Exception("Extracted Excel project differs from the built-in source workbook.");
+            Console.WriteLine("PASS new project extracts the complete embedded Excel template byte for byte");
+            workspace.Select(job);
+            workspace.Edit("input");
             dynamic book=EditorObject(workspace,"Book");dynamic app=EditorObject(workspace,"Application");
             if(!(bool)app.DisplayAlerts)throw new Exception("Manual Excel save/close prompts must be enabled.");
             SetTag(book,"CFL-SAVED-OPEN");book.Save();

@@ -10,9 +10,13 @@
     <Compile Include="WorkbookSmoke.cs" />
     <Compile Include="..\ZTools.Standalone\Core\Vb.cs" />
     <Compile Include="..\ZTools.Standalone\Core\WorkbookSession.cs" />
+    <Compile Include="..\ZTools.Standalone\Core\TemplateResources.cs" />
     <Compile Include="..\ZTools.Standalone\Core\SubmissionEngine.cs" />
     <Compile Include="..\ZTools.Standalone\Core\SectionSelection.cs" />
     <Compile Include="..\ZTools.Standalone\Core\Generated\*.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="..\Referrings\Ztools\ZTools.xls"><LogicalName>ZTools.Templates.ZTools.xls</LogicalName></EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

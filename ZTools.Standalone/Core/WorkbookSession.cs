@@ -126,9 +126,9 @@ namespace ZTools.Engine
             {
                 string configured = Environment.GetEnvironmentVariable("ZTOOLS_HOME");
                 if (!string.IsNullOrWhiteSpace(configured) && File.Exists(Path.Combine(configured, "Referrings", "Ztools", "ZTools.xls"))) return Path.GetFullPath(configured);
-                for (var dir = new DirectoryInfo(Path.GetDirectoryName(typeof(ProjectPaths).Assembly.Location)); dir != null; dir = dir.Parent)
+                for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir != null; dir = dir.Parent)
                     if (File.Exists(Path.Combine(dir.FullName, "Referrings", "Ztools", "ZTools.xls"))) return dir.FullName;
-                throw new DirectoryNotFoundException("未找到 Referrings\\Ztools\\ZTools.xls。请保留完整应用目录，或将 ZTOOLS_HOME 设置为项目目录。");
+                return AppContext.BaseDirectory;
             }
         }
         public static string SourceWorkbook => Path.Combine(Root, "Referrings", "Ztools", "ZTools.xls");
@@ -141,12 +141,13 @@ namespace ZTools.Engine
                 && string.Equals(folder.Name, "Ztools", StringComparison.OrdinalIgnoreCase)
                 && string.Equals(folder.Parent?.Name, "Referrings", StringComparison.OrdinalIgnoreCase);
         }
-        public static string Templates => Path.Combine(Root, "Referrings", "Ztools", "TEMPLATE");
         public static string CreateJob(string parent)
         {
             string path = Path.Combine(parent, "ZTools-" + DateTime.Now.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N").Substring(0, 6));
             Directory.CreateDirectory(path);
-            File.Copy(SourceWorkbook, Path.Combine(path, "ZTools.xls"), false);
+            using (var template = TemplateResources.Open("ZTools.xls"))
+            using (var copy = new FileStream(Path.Combine(path, "ZTools.xls"), FileMode.CreateNew, FileAccess.Write))
+                template.CopyTo(copy);
             return path;
         }
     }

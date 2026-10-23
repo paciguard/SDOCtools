@@ -28,7 +28,7 @@ function Start-Check([string[]]$Arguments){
 }
 try{
     $env:ASPNETCORE_URLS=$null
-    foreach($relative in 'wwwroot\index.html','wwwroot\vendor\three.module.js','Referrings\Ztools\ZTools.xls','Referrings\Ztools\TEMPLATE\SEC.dwg'){
+    foreach($relative in 'wwwroot\index.html','wwwroot\vendor\three.module.js','ZTools.Standalone.dll'){
         if(-not(Test-Path -LiteralPath (Join-Path $detached $relative))){throw "Build output is missing $relative"}
     }
     $first=Start-Check @('--no-browser','--port','55191');$children+=$first
@@ -36,7 +36,7 @@ try{
     if($health.application -ne 'CFL.SubmitTools'){throw 'Incorrect application identity'}
     if(-not (Read-Local 55191 '/') -or -not (Read-Local 55191 '/app.js')){throw 'Packaged browser files are not served'}
     $before=(Read-Local 55191 '/api/state')|ConvertFrom-Json
-    foreach($template in $before.data.templates){if(-not $template.path.StartsWith($detached+'\',[StringComparison]::OrdinalIgnoreCase)){throw 'Application did not use the packaged templates'}}
+    foreach($template in $before.data.templates){if($template.source -ne 'embedded' -or -not $template.exists){throw 'Application did not use its embedded DWG templates'}}
     $second=Start-Check @('--no-browser','--port','55191');$children+=$second
     if(-not $second.WaitForExit(15000) -or $second.ExitCode -ne 0){throw 'Repeat launch crashed instead of reusing the running application'}
     $after=(Read-Local 55191 '/api/state')|ConvertFrom-Json
@@ -44,7 +44,10 @@ try{
     Write-Host 'PASS executable launches from a detached folder and repeat launch preserves its running session'
     & (Join-Path $root 'tools\prepare-build.ps1') -OutputDirectory $Package -Ports 55191
     if(-not (Read-Local 55191)){throw 'Build preparation closed a different application copy'}
-    & (Join-Path $root 'tools\prepare-build.ps1') -OutputDirectory $detached -Ports 55191
+    # Visual Studio runs this helper through Windows PowerShell 5, whose default
+    # file encoding differs from PowerShell 7. State includes Chinese template labels.
+    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $root 'tools\prepare-build.ps1') -OutputDirectory $detached -Ports 55191
+    if($LASTEXITCODE -ne 0){throw 'Windows PowerShell rebuild preparation failed'}
     if(-not $first.WaitForExit(15000) -or $first.ExitCode -ne 0){throw 'Application did not close cleanly before rebuilding'}
     Write-Host 'PASS rebuild preparation closes only the matching idle output copy'
     $env:ASPNETCORE_URLS='http://127.0.0.1:55192'

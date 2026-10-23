@@ -1,4 +1,4 @@
-"""Verify all original reference files against the migration's initial manifest."""
+"""Verify all original reference files against the selected source snapshot."""
 import hashlib
 import argparse
 import json
@@ -6,7 +6,7 @@ from pathlib import Path
 
 root = Path(__file__).resolve().parents[1]
 parser = argparse.ArgumentParser()
-current = 'migration/source-manifest-20261023.json'
+current = 'migration/source-manifest-20261023-embedded.json'
 parser.add_argument('--manifest', default=current if (root/current).is_file() else 'migration/source-manifest.json', help='Reference snapshot relative to the project root')
 args = parser.parse_args()
 print('Reference snapshot:', args.manifest)

@@ -49,10 +49,8 @@ public sealed class Workspace:IDisposable
             for(int k=0;k<30;k++)if(!string.IsNullOrWhiteSpace(Vb.Text(input[k+1,11])))rows.Add(new {index=k,tag=Vb.Text(input[k+1,1]),model=Vb.Text(input[k+1,11]),material=Vb.Text(input[k+1,12]),template=Vb.Text(results[k+1,1]),list=Vb.Text(results[k+1,3])});
             cachedRows=rows;options=currentOptions=ReadOptions(book);reloadAfterEditorClosed=false;
         }
-        return new {job=workbookPath,editing=editor!=null,needsCalculation,notice,rows=cachedRows,options,output=LastOutput,log=Log.ToArray(),templates=new[]{"GA","PID","SEC"}.Select(k=>new{kind=k,path=Template(k),exists=File.Exists(Template(k)),format=Path.GetExtension(Template(k)).ToUpperInvariant()})};
+        return new {job=workbookPath,editing=editor!=null,needsCalculation,notice,rows=cachedRows,options,output=LastOutput,log=Log.ToArray(),templates=new[]{"GA","PID","SEC"}.Select(k=>new{kind=k,path="内置 "+k+".dwg",exists=TemplateResources.Contains(k+".dwg"),format=".DWG",source="embedded"})};
     }
-    public static string Template(string kind)
-    {return Path.Combine(ProjectPaths.Templates,kind+".dwg");}
     public object Create(string parent)
     {
         EnsureIdle();if(string.IsNullOrEmpty(parent)){using var picker=new FolderBrowserDialog {Description="请选择项目保存位置"};if(picker.ShowDialog()!=DialogResult.OK)return State();parent=picker.SelectedPath;}

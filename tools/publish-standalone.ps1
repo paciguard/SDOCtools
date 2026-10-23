@@ -18,7 +18,6 @@ function Invoke-Dotnet([string[]]$Arguments,[string]$Phase){
 }
 Invoke-Dotnet @('restore',(Join-Path $projectRoot 'ZTools.Standalone\ZTools.Standalone.csproj'),'--packages',(Join-Path $projectRoot '.tools\nuget'),'--disable-build-servers','/nr:false','/m:1') 'restore'
 Invoke-Dotnet @('publish',(Join-Path $projectRoot 'ZTools.Standalone\ZTools.Standalone.csproj'),'--no-restore','--configuration',$Configuration,'--output',$destination,'--disable-build-servers','/p:UseSharedCompilation=false','/nr:false','/m:1','-v:minimal') 'publish'
-Copy-Item -LiteralPath (Join-Path $projectRoot 'Referrings') -Destination $destination -Recurse -Force
 Copy-Item -LiteralPath (Join-Path $projectRoot 'tools\Start.ps1') -Destination (Join-Path $destination 'Start.ps1') -Force
 Copy-Item -LiteralPath (Join-Path $projectRoot 'THIRD-PARTY-NOTICES.md') -Destination $destination -Force
 Copy-Item -LiteralPath (Join-Path $projectRoot 'README.md') -Destination $destination -Force
@@ -28,11 +27,16 @@ function Get-SharedFileHash([string]$Path){
     try{return [BitConverter]::ToString($hasher.ComputeHash($stream)).Replace('-','')}
     finally{$stream.Dispose();$hasher.Dispose()}
 }
-foreach($source in Get-ChildItem (Join-Path $projectRoot 'Referrings') -Recurse -File){
-    $relative=$source.FullName.Substring($projectRoot.Length+1)
-    $copy=Join-Path $destination $relative
-    if((Get-SharedFileHash $source.FullName) -ne (Get-SharedFileHash $copy)){throw "Packaged reference mismatch: $relative"}
+$inventoryLog=Join-Path $projectRoot ('.tools/embedded-inventory-'+[Guid]::NewGuid().ToString('N'))
+$inspect=Start-Process -FilePath (Join-Path $destination 'ZTools.Standalone.exe') -ArgumentList '--verify-templates' -WindowStyle Hidden -PassThru -RedirectStandardOutput ($inventoryLog+'.json') -RedirectStandardError ($inventoryLog+'.err')
+if(-not $inspect.WaitForExit(30000) -or $inspect.ExitCode -ne 0){throw 'Embedded template verification failed.'}
+$inventory=@(Get-Content ($inventoryLog+'.json') -Raw|ConvertFrom-Json)
+if($inventory.Count -ne 4){throw 'Expected three embedded DWGs and the embedded Excel workbook.'}
+foreach($asset in $inventory){
+    $relative=if($asset.name -eq 'ZTools.xls'){'Referrings\Ztools\ZTools.xls'}else{'Referrings\Ztools\TEMPLATE\'+$asset.name}
+    if((Get-SharedFileHash (Join-Path $projectRoot $relative)) -ne $asset.sha256.ToUpperInvariant()){throw "Embedded template mismatch: $($asset.name)"}
 }
+if(@(Get-ChildItem $destination -Recurse -File | Where-Object {$_.Extension -in '.dwg','.xls','.dvb','.exb'}).Count){throw 'External business templates remain in the published application.'}
 $licenses=Join-Path $destination 'licenses';New-Item -ItemType Directory -Force -Path $licenses|Out-Null
 foreach($package in 'acadsharp/3.8.0','pdfsharp-gdi/6.2.4'){
     $packageRoot=Join-Path (Join-Path $projectRoot '.tools/nuget') $package

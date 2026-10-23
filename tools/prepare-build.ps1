@@ -12,7 +12,7 @@ function Request-Cfl([string]$Url,[string]$Token=''){
     try{$status=& $curl @arguments 2>$null;$requestExit=$LASTEXITCODE}catch{return $null}
     finally{$global:LASTEXITCODE=$previousExit}
     if($requestExit -ne 0){return $null}
-    $body=Get-Content -LiteralPath $temp -Raw
+    $body=[IO.File]::ReadAllText($temp,[Text.Encoding]::UTF8)
     return @{status=[string]$status;body=$body}
 }
 try{
@@ -57,3 +57,4 @@ try{
         Write-Host "Closed the idle application safely before updating $outputPath"
     }
 }finally{if(Test-Path -LiteralPath $temp){Remove-Item -LiteralPath $temp -Force}}
+& (Join-Path $PSScriptRoot 'retire-runtime-references.ps1') -OutputDirectory $outputPath

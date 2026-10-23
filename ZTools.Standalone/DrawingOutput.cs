@@ -18,6 +18,12 @@ public sealed record PlotScene(List<PlotItem> Items,List<string> Unsupported,She
 
 public static class DrawingOutput
 {
+    public static CadDocument ReadTemplate(string kind,List<string> notices)
+    {
+        if(!new[]{"GA","PID","SEC"}.Contains(kind))throw new InvalidOperationException("未知图纸类型。");
+        using var stream=TemplateResources.Open(kind+".dwg");
+        return DwgReader.Read(stream,(_,e)=>notices.Add(e.Message));
+    }
     public static CadDocument Read(string path,List<string> notices)
     {
         if(!Path.GetExtension(path).Equals(".dwg",StringComparison.OrdinalIgnoreCase))throw new InvalidOperationException("仅支持 DWG 图纸模板。");
@@ -177,12 +183,10 @@ public static class DrawingOutput
         {
             foreach(string kind in kinds.Distinct())foreach(int k in selected.Distinct())
             {
-                string template=Path.Combine(ProjectPaths.Templates,kind+".dwg");
-                if(!File.Exists(template))throw new FileNotFoundException("缺少图纸模板："+kind+".dwg",template);
                 string name=book.Cell("Sheet1",(kind=="GA"?"P":kind=="PID"?"Q":"R")+(40+k));
                 name=new string(name.Where(c=>!Path.GetInvalidFileNameChars().Contains(c)&&!char.IsControl(c)).ToArray()).Trim().TrimEnd('.');
                 if(name.Length==0)throw new InvalidOperationException("请先计算项目数据，再生成图纸。");
-                var document=Read(template,notices);
+                var document=ReadTemplate(kind,notices);
                 book.Book.Worksheets["Sheet1"].Range["C19"].Value2=40+k;
                 if(kind=="SEC")engine.PrepareSection(k);
                 engine.Drawing=new CadAdapter(document);

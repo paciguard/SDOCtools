@@ -4,11 +4,17 @@ using ACadSharp.IO;
 using ZTools.Engine;
 using ZTools.Standalone;
 
+if(args.Contains("--verify-templates"))
+{
+    Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(TemplateResources.Inventory,DrawingOutput.JsonOptions));
+    return;
+}
 if(args.Contains("--probe"))
 {
     var folder=Path.Combine(ProjectPaths.Root,"tests","standalone-probe");Directory.CreateDirectory(folder);
     foreach(var kind in new[]{"GA","PID","SEC"})
-    {var notices=new List<string>();var doc=DrawingOutput.Read(Workspace.Template(kind),notices);Console.WriteLine($"{kind}: {doc.Entities.Count()} entities, {doc.BlockRecords.Count} blocks, {notices.Count} import notices");doc.Header.Version=ACadSharp.ACadVersion.AC1032;DwgWriter.Write(Path.Combine(folder,kind+".dwg"),doc);}
+    {var notices=new List<string>();var doc=DrawingOutput.ReadTemplate(kind,notices);Console.WriteLine($"{kind}: {doc.Entities.Count()} entities, {doc.BlockRecords.Count} blocks, {notices.Count} import notices");doc.Header.Version=ACadSharp.ACadVersion.AC1032;DwgWriter.Write(Path.Combine(folder,kind+".dwg"),doc);}
+    Console.WriteLine("WORKBOOK_TEMPLATE_OK "+Path.Combine(ProjectPaths.CreateJob(folder),"ZTools.xls"));
     return;
 }
 using var sta=new StaWorker();using var workspace=new Workspace();
@@ -70,7 +76,7 @@ app.MapGet("/api/file/{id:int}/{format}",(int id,string format)=>
 app.MapGet("/api/template/{kind}",(string kind)=>
 {
     if(!new[]{"GA","PID","SEC"}.Contains(kind))throw new InvalidOperationException("未知模板。");
-    var notices=new List<string>();return DrawingOutput.Scene(DrawingOutput.Read(Workspace.Template(kind),notices),new());
+    var notices=new List<string>();return DrawingOutput.Scene(DrawingOutput.ReadTemplate(kind,notices),new());
 });
 app.Lifetime.ApplicationStopping.Register(()=>sta.Run(()=>{workspace.Dispose();return true;}).GetAwaiter().GetResult());
 try{await app.StartAsync();}
