@@ -1,0 +1,57 @@
+[
+  {
+    "path": "Referrings/Ztools/TEMPLATE/9a6e5c79-2442-428a-89a3-3b785dfdcd47.jpg",
+    "bytes": 54563,
+    "sha256": "43f19d1b83324c3f0d110e65f201d63576e2b20438e95e389989306a8351a786"
+  },
+  {
+    "path": "Referrings/Ztools/TEMPLATE/background.jpg",
+    "bytes": 20695,
+    "sha256": "131c4f2f1b420487e844812ad1c4c7d1b17a7ed2d7ce7f5af8b9ff71ff54f54d"
+  },
+  {
+    "path": "Referrings/Ztools/TEMPLATE/background.png",
+    "bytes": 3903347,
+    "sha256": "d84fa8dc883f42c3cca962bab42d743f00540e4cef3c095a84f24e145d78f05a"
+  },
+  {
+    "path": "Referrings/Ztools/TEMPLATE/GA.bak",
+    "bytes": 996174,
+    "sha256": "99f615253499bab7e503c0dec10d2c5ab24e2598a37a13e626b6ff6d0e9c1efd"
+  },
+  {
+    "path": "Referrings/Ztools/TEMPLATE/GA.dvb",
+    "bytes": 57856,
+    "sha256": "ac4c0d52bfbe01a291bcb4dd8e7f44ff981319ad766c774c5d37bc8123bb1aaa"
+  },
+  {
+    "path": "Referrings/Ztools/TEMPLATE/GA.dwg",
+    "bytes": 980530,
+    "sha256": "3e9c6c581ebefccd9c9fc637aa31c68099add62cad97724d17f6a0aeb1731c72"
+  },
+  {
+    "path": "Referrings/Ztools/TEMPLATE/PID.dvb",
+    "bytes": 52736,
+    "sha256": "c42abfd6e13df3b014256c79a89ef8b9ea3df0192751da2872af0e66c53058fd"
+  },
+  {
+    "path": "Referrings/Ztools/TEMPLATE/PID.dwg",
+    "bytes": 346626,
+    "sha256": "822d3f1e173d1242b0a11bb77867adf6002f4ae02bbc126f34f7450dde069fa8"
+  },
+  {
+    "path": "Referrings/Ztools/TEMPLATE/SEC.dvb",
+    "bytes": 66048,
+    "sha256": "b1da66a61725beccab9cb8ab1fe6c38ec4d4080b7b5988476b0f7464fb02b1f2"
+  },
+  {
+    "path": "Referrings/Ztools/TEMPLATE/SEC.dwg",
+    "bytes": 10921937,
+    "sha256": "b09243a89b9fb6953df0e9923f7c30ba1be49dbbf431a7044946084281f5573a"
+  },
+  {
+    "path": "Referrings/Ztools/ZTools.xls",
+    "bytes": 2966016,
+    "sha256": "056b7aa69bffe44ec4c7cfdda7e34acf3c708bf14095b2229272e18f6a798faa"
+  }
+]

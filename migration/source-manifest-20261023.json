@@ -1,0 +1,82 @@
+[
+  {
+    "path": "Referrings/Ztools/MC-template.dwg",
+    "bytes": 1070311,
+    "sha256": "70a1127533eccbd5402806f51627d2b01bc8f104d841c606854b5af8ed869400"
+  },
+  {
+    "path": "Referrings/Ztools/TEMPLATE/1-104 058 194进口段（法兰立置.EXB",
+    "bytes": 309638,
+    "sha256": "ef2d1cb93c4392daec5494578d5a2af0d78eea45944e9e1fe6eb97bbc09832ae"
+  },
+  {
+    "path": "Referrings/Ztools/TEMPLATE/1-104 068 129排出口段.exb",
+    "bytes": 175284,
+    "sha256": "6f19db06d9c7afdecf3363450c2acab8426c395ce72ab3932517a8e031e0bf04"
+  },
+  {
+    "path": "Referrings/Ztools/TEMPLATE/9a6e5c79-2442-428a-89a3-3b785dfdcd47.jpg",
+    "bytes": 54563,
+    "sha256": "43f19d1b83324c3f0d110e65f201d63576e2b20438e95e389989306a8351a786"
+  },
+  {
+    "path": "Referrings/Ztools/TEMPLATE/background.jpg",
+    "bytes": 20695,
+    "sha256": "131c4f2f1b420487e844812ad1c4c7d1b17a7ed2d7ce7f5af8b9ff71ff54f54d"
+  },
+  {
+    "path": "Referrings/Ztools/TEMPLATE/background.png",
+    "bytes": 3903347,
+    "sha256": "d84fa8dc883f42c3cca962bab42d743f00540e4cef3c095a84f24e145d78f05a"
+  },
+  {
+    "path": "Referrings/Ztools/TEMPLATE/GA.bak",
+    "bytes": 996174,
+    "sha256": "99f615253499bab7e503c0dec10d2c5ab24e2598a37a13e626b6ff6d0e9c1efd"
+  },
+  {
+    "path": "Referrings/Ztools/TEMPLATE/GA.dvb",
+    "bytes": 57856,
+    "sha256": "ac4c0d52bfbe01a291bcb4dd8e7f44ff981319ad766c774c5d37bc8123bb1aaa"
+  },
+  {
+    "path": "Referrings/Ztools/TEMPLATE/GA.dwg",
+    "bytes": 980530,
+    "sha256": "3e9c6c581ebefccd9c9fc637aa31c68099add62cad97724d17f6a0aeb1731c72"
+  },
+  {
+    "path": "Referrings/Ztools/TEMPLATE/MC50-6-Y225M.exb",
+    "bytes": 269602,
+    "sha256": "83c6a76009cdf8607034d607617a8fcb5f7a81d94a48965d7ba6ea5358755551"
+  },
+  {
+    "path": "Referrings/Ztools/TEMPLATE/PID.dvb",
+    "bytes": 52736,
+    "sha256": "c42abfd6e13df3b014256c79a89ef8b9ea3df0192751da2872af0e66c53058fd"
+  },
+  {
+    "path": "Referrings/Ztools/TEMPLATE/PID.dwg",
+    "bytes": 346626,
+    "sha256": "822d3f1e173d1242b0a11bb77867adf6002f4ae02bbc126f34f7450dde069fa8"
+  },
+  {
+    "path": "Referrings/Ztools/TEMPLATE/SEC.dvb",
+    "bytes": 66048,
+    "sha256": "b1da66a61725beccab9cb8ab1fe6c38ec4d4080b7b5988476b0f7464fb02b1f2"
+  },
+  {
+    "path": "Referrings/Ztools/TEMPLATE/SEC.dwg",
+    "bytes": 10921937,
+    "sha256": "b09243a89b9fb6953df0e9923f7c30ba1be49dbbf431a7044946084281f5573a"
+  },
+  {
+    "path": "Referrings/Ztools/TEMPLATE/XMD80 50  40(剖面图).exb",
+    "bytes": 724992,
+    "sha256": "0bab69b210c61778eac8ddd30e08555ea6eea94578551216944454493a962fd3"
+  },
+  {
+    "path": "Referrings/Ztools/ZTools.xls",
+    "bytes": 2717696,
+    "sha256": "fd0d19f490ec92de5119d13c6e7de442204193fa93981ca696668b4b2afab450"
+  }
+]

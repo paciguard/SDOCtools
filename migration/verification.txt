@@ -1,0 +1,108 @@
+ZTools AutoCAD migration verification — 2026-10-21
+
+Target: AutoCAD 2021, Windows x64, .NET Framework 4.8.
+Final Release build: PASS; no build warnings or errors.
+Release DLL: ZTools.AutoCAD/bin/Release/ZTools.AutoCAD.dll
+Deployable bundle: dist/ZTools.bundle
+
+Workbook integration: PASS
+  Log: tests/workbook-smoke.log
+  Latest run: tests/output/ZTools-20261021-135132-ae8894
+  All 20 sheets retained in a direct XLS copy.
+  Six input pumps calculated successfully.
+  13 dimensions per pump compared independently with the source database.
+  Total mass reconciled with pump, motor, baseplate and accessory mass.
+  All six section parts lists prepared.
+  Combined PID plans split; numeric plan codes preserved as text.
+  Utility lookup populated from workbook data.
+  Missing database matches rejected and calculation ranges restored.
+  Input gaps rejected before calculation.
+  Invalid copy count, plot-window bounds and missing manual media rejected.
+  Original workbook hash unchanged.
+
+Native managed ObjectARX integration: PASS
+  Full six-pump run: tests/native-output/20261021-134300/native-smoke.log
+  18 drawings constructed and saved: GA/PID/SEC for all six supplied pumps.
+  Equipment-tag attributes verified against the corresponding workbook row.
+  Following exact-anchor stale-title cleanup, all three drawing types were
+  rechecked for the first pump:
+    tests/native-output/20261021-134717/native-smoke.log
+
+Managed PDF / PID WBLOCK export: PASS
+  Log: tests/plot-output/plot-smoke.log
+  Final samples:
+    GA-1-20261021-135038.pdf
+    PID-1-20261021-135040.pdf
+    SEC-1-20261021-135041.pdf
+  One landscape A3 page each; rotation 0; nonempty graphics/text.
+  PID sheet-only DWG export also succeeded.
+  Rendered pages visually inspected; duplicate stale PID job titles removed;
+  formatted dates retained; landscape page margins corrected.
+
+UI / command wiring: PASS
+  Four ribbon panels with 14 command buttons.
+  Dockable panel with 13 workflow/settings buttons.
+  Command definitions, ribbon actions, palette actions and package registrations
+  checked for agreement by tools/verify_project.py.
+  Dockable panel rendered and visually reviewed at 370x780 and 310x650.
+  Plot-settings controls checked for populated defaults, visibility and bounds.
+
+Source / package preservation: PASS
+  tools/verify_sources.py: all 11 original reference files retain their initial
+  SHA-256 hashes and sizes.
+  tools/verify_project.py: all 11 packaged reference files match the originals.
+
+Limits of verification:
+  Native drawing and plotting checks ran inside AutoCAD Core Console, not a
+  visible interactive AutoCAD window. Live ribbon/palette docking, workspace
+  switching and button clicks should be checked after NETLOAD in AutoCAD 2021.
+  The modal/modeless UI command routing and full multi-document batch workflow
+  compile against the installed AutoCAD 2021 APIs; their interactive behavior
+  was not exercised by Core Console.
+  Other AutoCAD releases and every possible pump/plan/database combination were
+  not tested. Rebuild against a matching ObjectARX SDK for another release.
+
+Chinese UI and CFL branding update (2026-10-22): PASS
+  Ribbon, palette, plot settings, authored prompts and progress/errors use Chinese.
+  Original supplied CFL JPEG is embedded in the DLL and used in the ribbon entry
+  and palette/settings headers. Packaged resource SHA-256 matches the supplied
+  file: 1bd01d78a74bc1dc868a55a9d4f1a5065cde22a9de582a293510f2684ed6735c.
+  Debug and Release builds passed; explicit x64 solution configurations added.
+  Palette previews reviewed at 310x700 and 370x790; Chinese labels and logo fit.
+  Plot-settings control preview reviewed at 570x520.
+  All 14 commands and 13 palette buttons remain wired to existing commands.
+  All 11 original and packaged reference files retain their original hashes.
+  Packaged DLL matches the Release DLL, including the embedded logo resource.
+  Interactive AutoCAD ribbon/docking checks remain subject to the limits above.
+
+SEC calculation / List-all row-2 matching update (2026-10-23): PASS
+  Workbook regression: tests/workbook-sec-smoke.log, WORKBOOK_SMOKE_OK.
+  Six supplied pumps return exact SEC block names in Sheet1!CA and material-list
+  names in CC. All 78 dimensions and total masses still match the pump database.
+  Fifteen explicit selector cases cover 7/8/10 revisions, LK6, G, and CZ variants.
+  Reordering worksheets retains correct named-Sheet1 calculation output.
+  Moving the ZE8_QWL list to BZ verifies lookup beyond the former BA boundary.
+  CC returns the actual row-2 header spelling; duplicate headers are rejected.
+  Material overrides correctly switch regular/WO blocks; repeat preparation
+  does not duplicate the WO suffix. Missing-list failure restores CA/CC and BOM.
+  PID parsing, utility lookup, bad-database rollback and gap rejection pass.
+
+  AutoCAD Core Console: tests/section-output/20261023-100728/section-smoke.log.
+  SECTION_NAMES_SMOKE_OK: all 14 tested name combinations exist in List-all row 2
+  and the SEC block library. Thirteen variants completed native SEC generation;
+  the main block was inserted exactly once, including all five CZ variants.
+  One expected data gap: ZAG(LK6)_QWL refers to part 411.20, absent from List-detail.
+  That variant correctly stops with a missing-part error; no material was invented
+  and no incomplete drawing was generated. Test model strings exercise selectors;
+  they do not establish full pump-database coverage for every synthetic model.
+
+  The first console host used the original SEC input, which Core Console rewrote
+  on exit. SEC.dwg was restored from F:/BIZ/CFL/ZTools/TEMPLATE/SEC.dwg after
+  verifying its SHA-256 equals the original recorded b09243a89b9fb6953df0e9923f7c30ba1be49dbbf431a7044946084281f5573a.
+  The final run used only tests/section-host.dwg as the host drawing.
+  Source workbook hash was checked before/after disposable-workbook regression.
+  The current reference set contains 16 files, including five later-added EXB
+  references and a newer source XLS. Historical initial snapshot is preserved;
+  source-manifest-20261023.json records the current set. All 16 source files
+  stayed unchanged during the final isolated run; all 16 packaged copies match.
+  Debug/Release builds, 14-command wiring and bundle verification pass.

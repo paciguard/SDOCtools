@@ -1,0 +1,18 @@
+<Project ToolsVersion="Current" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType><TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <AssemblyName>WorkbookSmoke</AssemblyName><OutputPath>bin\</OutputPath>
+    <PlatformTarget>x64</PlatformTarget><LangVersion>7.3</LangVersion>
+    <DebugType>full</DebugType><DebugSymbols>true</DebugSymbols><NoWarn>0219</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" /><Reference Include="System.Core" /><Reference Include="Microsoft.CSharp" /><Reference Include="Microsoft.VisualBasic" />
+    <Compile Include="WorkbookSmoke.cs" />
+    <Compile Include="..\ZTools.Standalone\Core\Vb.cs" />
+    <Compile Include="..\ZTools.Standalone\Core\WorkbookSession.cs" />
+    <Compile Include="..\ZTools.Standalone\Core\SubmissionEngine.cs" />
+    <Compile Include="..\ZTools.Standalone\Core\SectionSelection.cs" />
+    <Compile Include="..\ZTools.Standalone\Core\Generated\*.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

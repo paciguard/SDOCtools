@@ -1,0 +1,10 @@
+# Preserve original workbook, drawing, VBA and image bytes in both locations.
+* -text
+*.xls binary
+*.dwg binary
+*.dvb binary
+*.EXB binary
+*.exb binary
+*.png binary
+*.jpg binary
+*.zip binary
