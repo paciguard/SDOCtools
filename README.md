@@ -35,6 +35,10 @@ Results are stored in `<project>/Output-Standalone/<timestamp>/GA|PID|SEC`. Each
 
 The build embeds the original `Referrings/Ztools/TEMPLATE/GA.dwg`, `PID.dwg`, `SEC.dwg`, and `Referrings/Ztools/ZTools.xls` byte for byte. DWGs are read directly from assembly resource streams, without extracting them to disk. Excel is extracted only as an editable project workbook, preserving all sheets, VBA content and the embedded database; macros remain disabled during app automation. Existing project workbooks are never replaced by the built-in template. Updating a built-in template requires rebuilding the application. Preserve original block names, attributes, and layers. The app is a template-driven drawing tool; it does not provide a general AutoCAD editor. It preserves CAD content supported by the DWG library. Non-graphical legacy object warnings are logged; unsupported visible PDF entity types stop export instead of silently disappearing. Visual fidelity for new templates or untested block combinations must be checked before issuing drawings.
 
+## GA database selection
+
+For pump family **ZE** with standard **7版** (or the legacy **7th** value), GA dimensions and weights come from worksheet **ZE7**, matched to the pump model and baseplate, including the voltage variant. Other ZE editions use **ZE**. Each equipment row selects its own sheet, so mixed editions can share one project. Missing ZE7 records stop calculation rather than falling back to ZE. The original Excel template and database are preserved.
+
 ## SEC calculation behavior
 
 The calculations address the worksheet **Sheet1 by name**, including when sheets are reordered. `Sheet1!CA40:CA69` contains the actual SEC drawing-block name, including required `_K6` and `WO` variants. `CC40:CC69` independently contains the exact matching material-list header from **List-all row 2**, searched through the last populated header. Missing and duplicate matches produce an error. Material quantities/descriptions come from the original workbook, not invented defaults.

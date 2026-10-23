@@ -220,6 +220,12 @@ namespace ZTools.Engine
             return decimal.TryParse(value,NumberStyles.AllowDecimalPoint,CultureInfo.InvariantCulture,out number)
                 ? number.ToString("0.00",CultureInfo.InvariantCulture) : value;
         }
+        private string PumpDatabaseSheet(object family, object pumpIndex)
+        {
+            string name = Vb.Text(family);
+            string standard = Regex.Replace(Get("input",21+Vb.Int(pumpIndex),5), @"\s+", "");
+            return name == "ZE" && Regex.IsMatch(standard, @"^7(?=\D|$)") ? "ZE7" : name;
+        }
         private int FindDatabaseOffset(object family, object size, object pumpIndex)
         {
             string sheet = Vb.Text(family), model = Vb.Text(size);

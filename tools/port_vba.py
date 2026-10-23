@@ -100,6 +100,7 @@ class Port:
             if v == 'changefld': return 'ChangeField'
             if v == 'updateprogress': return 'ReportProgress'
             if v == 'finddatabaseoffset': return 'FindDatabaseOffset'
+            if v == 'pumpdatabasesheet': return 'PumpDatabaseSheet'
             if v == 'insertpidplan': return 'InsertPidPlan'
             if v == 'calculatesectionnames': return 'CalculateSectionNames'
             if v == 'insertsection': return 'InsertSection'
@@ -280,6 +281,28 @@ def generate():
     source = (ROOT/'migration/legacy/ZTools/Module1.bas').read_text(encoding='utf-8')
     source = source[source.index('    Dim Pump_Type'):source.index("'used for progress")]
     source = source[:source.rfind('End Sub')]
+    # Keep the pump family ZE while selecting ZE7 as its database. Mutating
+    # Pump_Type to ZE7 mixes the database name with the pump family.
+    start = source.index("      'calculate available rows in ZE,ZF,ZA data source")
+    end = source.index("'calculate progress course---13", start)
+    ga = source[start:end]
+    version_if = 'If Pump_Type = "ZE" And VBA.Val(VBA.Left(Sheets("input").Range("E" & 21 + k), 1)) = 7 Then'
+    counter_start = ga.index(version_if)
+    counter_end = ga.index('End If', counter_start) + len('End If')
+    old = ga[counter_start:counter_end]
+    replacement = 'gaDatabaseSheet = PumpDatabaseSheet(Pump_Type, k)\nCounter = Sheets(gaDatabaseSheet).Range("A" & Rows.Count).End(xlUp).Row - 31'
+    ga = ga[:counter_start] + replacement + '\n' * (old.count('\n') - 1) + ga[counter_end:]
+    ga = re.sub(re.escape(version_if) + r'\s+origpumptype = Pump_Type\s+Pump_Type = "ZE7"\s*End If',
+                lambda m: '\n' * m[0].count('\n'), ga)
+    ga = ga.replace('Sheets(Pump_Type)', 'Sheets(gaDatabaseSheet)')
+    # ZE7 has f in T; its f* column U is empty. Keep the legacy 7th-edition
+    # f selection explicit when Pump_Type remains ZE.
+    ga = ga.replace('Sheets("ZE7").Range("$a$31:$bb$2000"), 21, False)', 'Sheets(gaDatabaseSheet).Range("$a$31:$bb$2000"), 20, False)')
+    ga = ga.replace('If origpumptype <> "" Then Pump_Type = origpumptype', '')
+    source = source[:start] + ga + source[end:]
+    # Accept both the Chinese UI value and the original workbook's 7th spelling,
+    # including harmless whitespace, for weight/nozzle lookups as well.
+    source = source.replace(version_if, 'If PumpDatabaseSheet(Pump_Type, k) = "ZE7" Then')
     # Host handles validation, state restoration, and visible progress.
     source = source.replace('ThisWorkbook.Save', '')
     source = re.sub(r'^.*(?:UserForm2|Unload |UpdateProgress|\.Select$|TypeName\(Selection\)|ScreenUpdating|MsgBox).*$','',source,flags=re.M)
@@ -289,7 +312,7 @@ def generate():
     # The old code carries ZE7 state between rows; reset per pump.
     source = source.replace('For k = 0 To i - 1', 'For k = 0 To i - 1\norigpumptype = ""')
     source = source.replace('VBA.Replace(Sheets("input").Range("AB" & 21 + k), VBA.Left(str2, 2), Sheets("input").Range("AB" & 21 + k))', 'VBA.Replace(str2, VBA.Left(str2, 2), Sheets("input").Range("AB" & 21 + k))')
-    source = source.replace('For X = 0 To Counter - 1', 'Dim databaseOffset As Long\ndatabaseOffset = FindDatabaseOffset(Pump_Type, str4, k)\nFor X = databaseOffset To databaseOffset')
+    source = source.replace('For X = 0 To Counter - 1', 'Dim databaseOffset As Long\ndatabaseOffset = FindDatabaseOffset(gaDatabaseSheet, str4, k)\nFor X = databaseOffset To databaseOffset')
     # The legacy SEC branches have an erroneous nested If in the LK6 case.
     # Resolve both names once in the host, and address Sheet1 by name throughout.
     start = source.rfind('\n', 0, source.index('If InStr(Sheets(1).Range("C" & 40 + k)'))

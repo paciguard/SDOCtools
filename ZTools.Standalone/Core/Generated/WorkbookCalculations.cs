@@ -12,6 +12,7 @@ namespace ZTools.Engine {
             dynamic @counterprogress = 0;
             dynamic @countersum = 0;
             dynamic @databaseoffset = 0;
+            dynamic @gadatabasesheet = null;
             dynamic @i = 0;
             dynamic @j = 0;
             dynamic @k = 0;
@@ -280,7 +281,7 @@ namespace ZTools.Engine {
                     // Normalized rule line 244
                 }
                 // Normalized rule line 251
-                if (Vb.Bool(Vb.And(Vb.Eq(@pump_type, "ZE"), Vb.Eq(Vb.Val(Vb.Left(Book.Worksheets["input"].Range[Vb.Cat("E", Vb.Add(21, @k))].Value2, 1)), 7)))) {
+                if (Vb.Bool(Vb.Eq(PumpDatabaseSheet(@pump_type, @k), "ZE7"))) {
                     // Normalized rule line 252
                     @origpumptype = @pump_type;
                     // Normalized rule line 253
@@ -524,7 +525,7 @@ namespace ZTools.Engine {
                 // Normalized rule line 504
                 @pctdone = Vb.Div(@progress, @countersum);
                 // Normalized rule line 508
-                if (Vb.Bool(Vb.And(Vb.Eq(@pump_type, "ZE"), Vb.Eq(Vb.Val(Vb.Left(Book.Worksheets["input"].Range[Vb.Cat("E", Vb.Add(21, @k))].Value2, 1)), 7)))) {
+                if (Vb.Bool(Vb.Eq(PumpDatabaseSheet(@pump_type, @k), "ZE7"))) {
                     // Normalized rule line 509
                     @origpumptype = @pump_type;
                     // Normalized rule line 510
@@ -962,32 +963,18 @@ namespace ZTools.Engine {
                     // Normalized rule line 850
                 }
                 // Normalized rule line 856
-                if (Vb.Bool(Vb.And(Vb.Eq(@pump_type, "ZE"), Vb.Eq(Vb.Val(Vb.Left(Book.Worksheets["input"].Range[Vb.Cat("E", Vb.Add(21, @k))].Value2, 1)), 7)))) {
-                    // Normalized rule line 857
-                    @counter = Vb.Sub(Book.Worksheets["ZE7"].Range[Vb.Cat("A", ExcelApp.Rows.Count)].End[-4162].Row, 31);
-                    // Normalized rule line 858
-                } else {
-                    // Normalized rule line 859
-                    @counter = Vb.Sub(Book.Worksheets[@pump_type].Range[Vb.Cat("A", ExcelApp.Rows.Count)].End[-4162].Row, 31);
-                    // Normalized rule line 860
-                }
+                @gadatabasesheet = PumpDatabaseSheet(@pump_type, @k);
+                // Normalized rule line 857
+                @counter = Vb.Sub(Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("A", ExcelApp.Rows.Count)].End[-4162].Row, 31);
                 // Normalized rule line 866
                 @progress = Vb.Mul(5, @counterprogress);
                 // Normalized rule line 867
                 @counterprogress = Vb.Add(@counterprogress, 1);
                 // Normalized rule line 868
                 @pctdone = Vb.Div(@progress, @countersum);
-                // Normalized rule line 876
-                if (Vb.Bool(Vb.And(Vb.Eq(@pump_type, "ZE"), Vb.Eq(Vb.Val(Vb.Left(Book.Worksheets["input"].Range[Vb.Cat("E", Vb.Add(21, @k))].Value2, 1)), 7)))) {
-                    // Normalized rule line 877
-                    @origpumptype = @pump_type;
-                    // Normalized rule line 878
-                    @pump_type = "ZE7";
-                    // Normalized rule line 879
-                }
                 // Normalized rule line 881
                 // Normalized rule line 882
-                @databaseoffset = FindDatabaseOffset(@pump_type, @str4, @k);
+                @databaseoffset = FindDatabaseOffset(@gadatabasesheet, @str4, @k);
                 // Normalized rule line 883
                 for (@x = @databaseoffset; Vb.Le(@x, @databaseoffset); @x = Vb.Add(@x, 1)) {
                     // Normalized rule line 885
@@ -997,11 +984,11 @@ namespace ZTools.Engine {
                     // Normalized rule line 887
                     if (Vb.Bool(Vb.Ne(Book.Worksheets["input"].Range[Vb.Cat("V", Vb.Add(21, @k))].Value2, "380V"))) {
                         // Normalized rule line 889
-                        if (Vb.Bool(Vb.And(Vb.Eq(Book.Worksheets[@pump_type].Range[Vb.Cat("A", Vb.Add(32, @x))].Value2, @str4), Vb.Eq(Book.Worksheets[@pump_type].Range[Vb.Cat("F", Vb.Add(32, @x))].Value2, Vb.Cat(Book.Worksheets["input"].Range[Vb.Cat("U", Vb.Add(21, @k))].Value2, "(6KV)"))))) {
+                        if (Vb.Bool(Vb.And(Vb.Eq(Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("A", Vb.Add(32, @x))].Value2, @str4), Vb.Eq(Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("F", Vb.Add(32, @x))].Value2, Vb.Cat(Book.Worksheets["input"].Range[Vb.Cat("U", Vb.Add(21, @k))].Value2, "(6KV)"))))) {
                             // Normalized rule line 891
-                            Book.Worksheets["Sheet1"].Range[Vb.Cat("G", Vb.Add(40, @k))].Value2 = Book.Worksheets[@pump_type].Range[Vb.Cat("y", Vb.Add(@x, 32))].Value2;
+                            Book.Worksheets["Sheet1"].Range[Vb.Cat("G", Vb.Add(40, @k))].Value2 = Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("y", Vb.Add(@x, 32))].Value2;
                             // Normalized rule line 893
-                            Book.Worksheets["Sheet1"].Range[Vb.Cat("H", Vb.Add(40, @k))].Value2 = Book.Worksheets[@pump_type].Range[Vb.Cat("z", Vb.Add(@x, 32))].Value2;
+                            Book.Worksheets["Sheet1"].Range[Vb.Cat("H", Vb.Add(40, @k))].Value2 = Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("z", Vb.Add(@x, 32))].Value2;
                             // Normalized rule line 896
                             for (@y = 0; Vb.Le(@y, 6); @y = Vb.Add(@y, 1)) {
                                 // Normalized rule line 898
@@ -1019,17 +1006,17 @@ namespace ZTools.Engine {
                             // Normalized rule line 908
                             Book.Worksheets["Sheet1"].Range[Vb.Cat("I", Vb.Add(40, @k))].Value2 = Vb.Add(@other_weight, Vb.Mul(100, @counter2));
                             // Normalized rule line 916
-                            Book.Worksheets["Sheet1"].Range[Vb.Cat("X", Vb.Add(40, @k))].Value2 = Book.Worksheets[@pump_type].Range[Vb.Cat("g", Vb.Add(@x, 32))].Value2;
+                            Book.Worksheets["Sheet1"].Range[Vb.Cat("X", Vb.Add(40, @k))].Value2 = Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("g", Vb.Add(@x, 32))].Value2;
                             // Normalized rule line 918
-                            Book.Worksheets["Sheet1"].Range[Vb.Cat("Y", Vb.Add(40, @k))].Value2 = Book.Worksheets[@pump_type].Range[Vb.Cat("h", Vb.Add(@x, 32))].Value2;
+                            Book.Worksheets["Sheet1"].Range[Vb.Cat("Y", Vb.Add(40, @k))].Value2 = Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("h", Vb.Add(@x, 32))].Value2;
                             // Normalized rule line 920
-                            Book.Worksheets["Sheet1"].Range[Vb.Cat("Z", Vb.Add(40, @k))].Value2 = Book.Worksheets[@pump_type].Range[Vb.Cat("i", Vb.Add(@x, 32))].Value2;
+                            Book.Worksheets["Sheet1"].Range[Vb.Cat("Z", Vb.Add(40, @k))].Value2 = Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("i", Vb.Add(@x, 32))].Value2;
                             // Normalized rule line 922
-                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AA", Vb.Add(40, @k))].Value2 = Book.Worksheets[@pump_type].Range[Vb.Cat("j", Vb.Add(@x, 32))].Value2;
+                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AA", Vb.Add(40, @k))].Value2 = Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("j", Vb.Add(@x, 32))].Value2;
                             // Normalized rule line 924
-                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AB", Vb.Add(40, @k))].Value2 = Book.Worksheets[@pump_type].Range[Vb.Cat("k", Vb.Add(@x, 32))].Value2;
+                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AB", Vb.Add(40, @k))].Value2 = Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("k", Vb.Add(@x, 32))].Value2;
                             // Normalized rule line 926
-                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AC", Vb.Add(40, @k))].Value2 = Book.Worksheets[@pump_type].Range[Vb.Cat("l", Vb.Add(@x, 32))].Value2;
+                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AC", Vb.Add(40, @k))].Value2 = Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("l", Vb.Add(@x, 32))].Value2;
                             // Normalized rule line 927
                             if (Vb.Bool(Vb.Ne(Book.Worksheets["input"].Range[Vb.Cat("AB", Vb.Add(21, @k))].Value2, ""))) {
                                 // Normalized rule line 928
@@ -1037,31 +1024,31 @@ namespace ZTools.Engine {
                                 // Normalized rule line 929
                             }
                             // Normalized rule line 932
-                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AD", Vb.Add(40, @k))].Value2 = Book.Worksheets[@pump_type].Range[Vb.Cat("m", Vb.Add(@x, 32))].Value2;
+                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AD", Vb.Add(40, @k))].Value2 = Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("m", Vb.Add(@x, 32))].Value2;
                             // Normalized rule line 934
-                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AE", Vb.Add(40, @k))].Value2 = Book.Worksheets[@pump_type].Range[Vb.Cat("n", Vb.Add(@x, 32))].Value2;
+                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AE", Vb.Add(40, @k))].Value2 = Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("n", Vb.Add(@x, 32))].Value2;
                             // Normalized rule line 936
-                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AF", Vb.Add(40, @k))].Value2 = Book.Worksheets[@pump_type].Range[Vb.Cat("o", Vb.Add(@x, 32))].Value2;
+                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AF", Vb.Add(40, @k))].Value2 = Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("o", Vb.Add(@x, 32))].Value2;
                             // Normalized rule line 938
-                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AG", Vb.Add(40, @k))].Value2 = Book.Worksheets[@pump_type].Range[Vb.Cat("p", Vb.Add(@x, 32))].Value2;
+                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AG", Vb.Add(40, @k))].Value2 = Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("p", Vb.Add(@x, 32))].Value2;
                             // Normalized rule line 940
-                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AH", Vb.Add(40, @k))].Value2 = Book.Worksheets[@pump_type].Range[Vb.Cat("q", Vb.Add(@x, 32))].Value2;
+                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AH", Vb.Add(40, @k))].Value2 = Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("q", Vb.Add(@x, 32))].Value2;
                             // Normalized rule line 942
-                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AI", Vb.Add(40, @k))].Value2 = Book.Worksheets[@pump_type].Range[Vb.Cat("r", Vb.Add(@x, 32))].Value2;
+                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AI", Vb.Add(40, @k))].Value2 = Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("r", Vb.Add(@x, 32))].Value2;
                             // Normalized rule line 944
-                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AJ", Vb.Add(40, @k))].Value2 = Book.Worksheets[@pump_type].Range[Vb.Cat("s", Vb.Add(@x, 32))].Value2;
+                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AJ", Vb.Add(40, @k))].Value2 = Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("s", Vb.Add(@x, 32))].Value2;
                             // Normalized rule line 946
-                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AM", Vb.Add(40, @k))].Value2 = Book.Worksheets[@pump_type].Range[Vb.Cat("v", Vb.Add(@x, 32))].Value2;
+                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AM", Vb.Add(40, @k))].Value2 = Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("v", Vb.Add(@x, 32))].Value2;
                             // Normalized rule line 948
-                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AN", Vb.Add(40, @k))].Value2 = Book.Worksheets[@pump_type].Range[Vb.Cat("w", Vb.Add(@x, 32))].Value2;
+                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AN", Vb.Add(40, @k))].Value2 = Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("w", Vb.Add(@x, 32))].Value2;
                             // Normalized rule line 950
-                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AT", Vb.Add(40, @k))].Value2 = Book.Worksheets[@pump_type].Range[Vb.Cat("ac", Vb.Add(@x, 32))].Value2;
+                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AT", Vb.Add(40, @k))].Value2 = Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("ac", Vb.Add(@x, 32))].Value2;
                             // Normalized rule line 952
-                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AU", Vb.Add(40, @k))].Value2 = Book.Worksheets[@pump_type].Range[Vb.Cat("ad", Vb.Add(@x, 32))].Value2;
+                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AU", Vb.Add(40, @k))].Value2 = Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("ad", Vb.Add(@x, 32))].Value2;
                             // Normalized rule line 954
                             if (Vb.Bool(Vb.Or(Vb.Eq(@pump_type, "ZA"), Vb.Eq(@pump_type, "CZ")))) {
                                 // Normalized rule line 955
-                                Book.Worksheets["Sheet1"].Range[Vb.Cat("BQ", Vb.Add(40, @k))].Value2 = Book.Worksheets[@pump_type].Range[Vb.Cat("ae", Vb.Add(@x, 32))].Value2;
+                                Book.Worksheets["Sheet1"].Range[Vb.Cat("BQ", Vb.Add(40, @k))].Value2 = Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("ae", Vb.Add(@x, 32))].Value2;
                                 // Normalized rule line 956
                             } else {
                                 // Normalized rule line 957
@@ -1075,11 +1062,11 @@ namespace ZTools.Engine {
                         // Normalized rule line 964
                     } else {
                         // Normalized rule line 966
-                        if (Vb.Bool(Vb.And(Vb.Eq(Book.Worksheets[@pump_type].Range[Vb.Cat("A", Vb.Add(32, @x))].Value2, @str4), Vb.Eq(Book.Worksheets[@pump_type].Range[Vb.Cat("F", Vb.Add(32, @x))].Value2, Book.Worksheets["input"].Range[Vb.Cat("U", Vb.Add(21, @k))].Value2)))) {
+                        if (Vb.Bool(Vb.And(Vb.Eq(Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("A", Vb.Add(32, @x))].Value2, @str4), Vb.Eq(Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("F", Vb.Add(32, @x))].Value2, Book.Worksheets["input"].Range[Vb.Cat("U", Vb.Add(21, @k))].Value2)))) {
                             // Normalized rule line 967
-                            Book.Worksheets["Sheet1"].Range[Vb.Cat("G", Vb.Add(40, @k))].Value2 = Book.Worksheets[@pump_type].Range[Vb.Cat("y", Vb.Add(@x, 32))].Value2;
+                            Book.Worksheets["Sheet1"].Range[Vb.Cat("G", Vb.Add(40, @k))].Value2 = Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("y", Vb.Add(@x, 32))].Value2;
                             // Normalized rule line 968
-                            Book.Worksheets["Sheet1"].Range[Vb.Cat("H", Vb.Add(40, @k))].Value2 = Book.Worksheets[@pump_type].Range[Vb.Cat("z", Vb.Add(@x, 32))].Value2;
+                            Book.Worksheets["Sheet1"].Range[Vb.Cat("H", Vb.Add(40, @k))].Value2 = Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("z", Vb.Add(@x, 32))].Value2;
                             // Normalized rule line 971
                             for (@y = 0; Vb.Le(@y, 6); @y = Vb.Add(@y, 1)) {
                                 // Normalized rule line 973
@@ -1097,17 +1084,17 @@ namespace ZTools.Engine {
                             // Normalized rule line 983
                             Book.Worksheets["Sheet1"].Range[Vb.Cat("I", Vb.Add(40, @k))].Value2 = Vb.Add(@other_weight, Vb.Mul(100, @counter2));
                             // Normalized rule line 987
-                            Book.Worksheets["Sheet1"].Range[Vb.Cat("X", Vb.Add(40, @k))].Value2 = Book.Worksheets[@pump_type].Range[Vb.Cat("g", Vb.Add(@x, 32))].Value2;
+                            Book.Worksheets["Sheet1"].Range[Vb.Cat("X", Vb.Add(40, @k))].Value2 = Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("g", Vb.Add(@x, 32))].Value2;
                             // Normalized rule line 988
-                            Book.Worksheets["Sheet1"].Range[Vb.Cat("Y", Vb.Add(40, @k))].Value2 = Book.Worksheets[@pump_type].Range[Vb.Cat("h", Vb.Add(@x, 32))].Value2;
+                            Book.Worksheets["Sheet1"].Range[Vb.Cat("Y", Vb.Add(40, @k))].Value2 = Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("h", Vb.Add(@x, 32))].Value2;
                             // Normalized rule line 989
-                            Book.Worksheets["Sheet1"].Range[Vb.Cat("Z", Vb.Add(40, @k))].Value2 = Book.Worksheets[@pump_type].Range[Vb.Cat("i", Vb.Add(@x, 32))].Value2;
+                            Book.Worksheets["Sheet1"].Range[Vb.Cat("Z", Vb.Add(40, @k))].Value2 = Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("i", Vb.Add(@x, 32))].Value2;
                             // Normalized rule line 990
-                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AA", Vb.Add(40, @k))].Value2 = Book.Worksheets[@pump_type].Range[Vb.Cat("j", Vb.Add(@x, 32))].Value2;
+                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AA", Vb.Add(40, @k))].Value2 = Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("j", Vb.Add(@x, 32))].Value2;
                             // Normalized rule line 991
-                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AB", Vb.Add(40, @k))].Value2 = Book.Worksheets[@pump_type].Range[Vb.Cat("k", Vb.Add(@x, 32))].Value2;
+                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AB", Vb.Add(40, @k))].Value2 = Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("k", Vb.Add(@x, 32))].Value2;
                             // Normalized rule line 992
-                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AC", Vb.Add(40, @k))].Value2 = Book.Worksheets[@pump_type].Range[Vb.Cat("l", Vb.Add(@x, 32))].Value2;
+                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AC", Vb.Add(40, @k))].Value2 = Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("l", Vb.Add(@x, 32))].Value2;
                             // Normalized rule line 994
                             if (Vb.Bool(Vb.Ne(Book.Worksheets["input"].Range[Vb.Cat("AB", Vb.Add(21, @k))].Value2, ""))) {
                                 // Normalized rule line 995
@@ -1115,31 +1102,31 @@ namespace ZTools.Engine {
                                 // Normalized rule line 996
                             }
                             // Normalized rule line 999
-                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AD", Vb.Add(40, @k))].Value2 = Book.Worksheets[@pump_type].Range[Vb.Cat("m", Vb.Add(@x, 32))].Value2;
+                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AD", Vb.Add(40, @k))].Value2 = Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("m", Vb.Add(@x, 32))].Value2;
                             // Normalized rule line 1000
-                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AE", Vb.Add(40, @k))].Value2 = Book.Worksheets[@pump_type].Range[Vb.Cat("n", Vb.Add(@x, 32))].Value2;
+                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AE", Vb.Add(40, @k))].Value2 = Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("n", Vb.Add(@x, 32))].Value2;
                             // Normalized rule line 1001
-                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AF", Vb.Add(40, @k))].Value2 = Book.Worksheets[@pump_type].Range[Vb.Cat("o", Vb.Add(@x, 32))].Value2;
+                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AF", Vb.Add(40, @k))].Value2 = Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("o", Vb.Add(@x, 32))].Value2;
                             // Normalized rule line 1002
-                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AG", Vb.Add(40, @k))].Value2 = Book.Worksheets[@pump_type].Range[Vb.Cat("p", Vb.Add(@x, 32))].Value2;
+                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AG", Vb.Add(40, @k))].Value2 = Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("p", Vb.Add(@x, 32))].Value2;
                             // Normalized rule line 1003
-                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AH", Vb.Add(40, @k))].Value2 = Book.Worksheets[@pump_type].Range[Vb.Cat("q", Vb.Add(@x, 32))].Value2;
+                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AH", Vb.Add(40, @k))].Value2 = Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("q", Vb.Add(@x, 32))].Value2;
                             // Normalized rule line 1004
-                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AI", Vb.Add(40, @k))].Value2 = Book.Worksheets[@pump_type].Range[Vb.Cat("r", Vb.Add(@x, 32))].Value2;
+                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AI", Vb.Add(40, @k))].Value2 = Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("r", Vb.Add(@x, 32))].Value2;
                             // Normalized rule line 1005
-                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AJ", Vb.Add(40, @k))].Value2 = Book.Worksheets[@pump_type].Range[Vb.Cat("s", Vb.Add(@x, 32))].Value2;
+                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AJ", Vb.Add(40, @k))].Value2 = Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("s", Vb.Add(@x, 32))].Value2;
                             // Normalized rule line 1006
-                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AM", Vb.Add(40, @k))].Value2 = Book.Worksheets[@pump_type].Range[Vb.Cat("v", Vb.Add(@x, 32))].Value2;
+                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AM", Vb.Add(40, @k))].Value2 = Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("v", Vb.Add(@x, 32))].Value2;
                             // Normalized rule line 1007
-                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AN", Vb.Add(40, @k))].Value2 = Book.Worksheets[@pump_type].Range[Vb.Cat("w", Vb.Add(@x, 32))].Value2;
+                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AN", Vb.Add(40, @k))].Value2 = Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("w", Vb.Add(@x, 32))].Value2;
                             // Normalized rule line 1008
-                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AT", Vb.Add(40, @k))].Value2 = Book.Worksheets[@pump_type].Range[Vb.Cat("ac", Vb.Add(@x, 32))].Value2;
+                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AT", Vb.Add(40, @k))].Value2 = Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("ac", Vb.Add(@x, 32))].Value2;
                             // Normalized rule line 1009
-                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AU", Vb.Add(40, @k))].Value2 = Book.Worksheets[@pump_type].Range[Vb.Cat("ad", Vb.Add(@x, 32))].Value2;
+                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AU", Vb.Add(40, @k))].Value2 = Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("ad", Vb.Add(@x, 32))].Value2;
                             // Normalized rule line 1010
                             if (Vb.Bool(Vb.Or(Vb.Eq(@pump_type, "ZA"), Vb.Eq(@pump_type, "CZ")))) {
                                 // Normalized rule line 1011
-                                Book.Worksheets["Sheet1"].Range[Vb.Cat("BQ", Vb.Add(40, @k))].Value2 = Book.Worksheets[@pump_type].Range[Vb.Cat("ae", Vb.Add(@x, 32))].Value2;
+                                Book.Worksheets["Sheet1"].Range[Vb.Cat("BQ", Vb.Add(40, @k))].Value2 = Book.Worksheets[@gadatabasesheet].Range[Vb.Cat("ae", Vb.Add(@x, 32))].Value2;
                                 // Normalized rule line 1012
                             } else {
                                 // Normalized rule line 1013
@@ -1154,26 +1141,26 @@ namespace ZTools.Engine {
                     }
                     // Normalized rule line 1029
                     if (Vb.Bool(Vb.Ne(@pump_type, "ZE"))) {
-                        Book.Worksheets["Sheet1"].Range[Vb.Cat("AK", Vb.Add(40, @k))].Value2 = ExcelApp.WorksheetFunction.VLookup(@str4, Book.Worksheets[@pump_type].Range["$a$31:$bb$2000"], 20, false);
+                        Book.Worksheets["Sheet1"].Range[Vb.Cat("AK", Vb.Add(40, @k))].Value2 = ExcelApp.WorksheetFunction.VLookup(@str4, Book.Worksheets[@gadatabasesheet].Range["$a$31:$bb$2000"], 20, false);
                     }
                     // Normalized rule line 1031
                     if (Vb.Bool(Vb.Eq(@pump_type, "ZE"))) {
                         // Normalized rule line 1032
                         if (Vb.Bool(Vb.And(Vb.Ne(Vb.Instr(Book.Worksheets["input"].Range[Vb.Cat("E", Vb.Add(21, @k))].Value2, "8"), 0), Vb.Instr(Book.Worksheets["input"].Range[Vb.Cat("AA", Vb.Add(21, @k))].Value2, "F")))) {
                             // Normalized rule line 1033
-                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AK", Vb.Add(40, @k))].Value2 = ExcelApp.WorksheetFunction.VLookup(@str4, Book.Worksheets[@pump_type].Range["$a$31:$bb$2000"], 21, false);
+                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AK", Vb.Add(40, @k))].Value2 = ExcelApp.WorksheetFunction.VLookup(@str4, Book.Worksheets[@gadatabasesheet].Range["$a$31:$bb$2000"], 21, false);
                             // Normalized rule line 1036
                         } else if (Vb.Bool(Vb.Ne(Vb.Instr(Book.Worksheets["input"].Range[Vb.Cat("E", Vb.Add(21, @k))].Value2, "0th"), 0))) {
                             // Normalized rule line 1037
-                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AK", Vb.Add(40, @k))].Value2 = ExcelApp.WorksheetFunction.VLookup(@str4, Book.Worksheets[@pump_type].Range["$a$31:$bb$2000"], 21, false);
+                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AK", Vb.Add(40, @k))].Value2 = ExcelApp.WorksheetFunction.VLookup(@str4, Book.Worksheets[@gadatabasesheet].Range["$a$31:$bb$2000"], 21, false);
                             // Normalized rule line 1039
                         } else if (Vb.Bool(Vb.Ne(Vb.Instr(Book.Worksheets["input"].Range[Vb.Cat("E", Vb.Add(21, @k))].Value2, "7"), 0))) {
                             // Normalized rule line 1040
-                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AK", Vb.Add(40, @k))].Value2 = ExcelApp.WorksheetFunction.VLookup(@str4, Book.Worksheets["ZE7"].Range["$a$31:$bb$2000"], 21, false);
+                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AK", Vb.Add(40, @k))].Value2 = ExcelApp.WorksheetFunction.VLookup(@str4, Book.Worksheets[@gadatabasesheet].Range["$a$31:$bb$2000"], 20, false);
                             // Normalized rule line 1042
                         } else {
                             // Normalized rule line 1043
-                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AK", Vb.Add(40, @k))].Value2 = ExcelApp.WorksheetFunction.VLookup(@str4, Book.Worksheets[@pump_type].Range["$a$31:$bb$2000"], 20, false);
+                            Book.Worksheets["Sheet1"].Range[Vb.Cat("AK", Vb.Add(40, @k))].Value2 = ExcelApp.WorksheetFunction.VLookup(@str4, Book.Worksheets[@gadatabasesheet].Range["$a$31:$bb$2000"], 20, false);
                             // Normalized rule line 1044
                         }
                         // Normalized rule line 1045
@@ -1217,10 +1204,6 @@ namespace ZTools.Engine {
                         // Normalized rule line 1083
                     }
                     // Normalized rule line 1091
-                }
-                // Normalized rule line 1093
-                if (Vb.Bool(Vb.Ne(@origpumptype, ""))) {
-                    @pump_type = @origpumptype;
                 }
                 // Normalized rule line 1097
                 @progress = Vb.Mul(5, @counterprogress);
