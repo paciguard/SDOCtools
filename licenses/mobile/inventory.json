@@ -1,0 +1,142 @@
+[
+  {
+    "name": "ACadSharp",
+    "version": "3.8.0",
+    "license": "MIT",
+    "authors": "DomCr",
+    "copyright": "Copyright (c) 2026 Albert Domenech"
+  },
+  {
+    "name": "BouncyCastle.Cryptography",
+    "version": "2.4.0",
+    "license": "MIT",
+    "authors": "Legion of the Bouncy Castle Inc.",
+    "copyright": "Copyright © Legion of the Bouncy Castle Inc. 2000-2024"
+  },
+  {
+    "name": "Enums.NET",
+    "version": "5.0.0",
+    "license": "MIT",
+    "authors": "Tyler Brinkley",
+    "copyright": "Copyright © Tyler Brinkley 2016"
+  },
+  {
+    "name": "ExtendedNumerics.BigDecimal",
+    "version": "2025.1001.2.129",
+    "license": "MIT",
+    "authors": "Adam White, Jan Christoph Bernack, Rick Harker",
+    "copyright": "Adam White. MIT License. See License."
+  },
+  {
+    "name": "MathNet.Numerics.Signed",
+    "version": "5.0.0",
+    "license": "MIT",
+    "authors": "Christoph Ruegg, Marcus Cuda, Jurgen Van Gael",
+    "copyright": "Copyright Math.NET Project"
+  },
+  {
+    "name": "Microsoft.Extensions.DependencyInjection.Abstractions",
+    "version": "8.0.2",
+    "license": "MIT",
+    "authors": "Microsoft",
+    "copyright": "© Microsoft Corporation. All rights reserved."
+  },
+  {
+    "name": "Microsoft.Extensions.Logging.Abstractions",
+    "version": "8.0.3",
+    "license": "MIT",
+    "authors": "Microsoft",
+    "copyright": "© Microsoft Corporation. All rights reserved."
+  },
+  {
+    "name": "Microsoft.IO.RecyclableMemoryStream",
+    "version": "3.0.1",
+    "license": "MIT",
+    "authors": "Microsoft",
+    "copyright": "© Microsoft Corporation. All rights reserved."
+  },
+  {
+    "name": "Microsoft.NETCore.Platforms",
+    "version": "5.0.0",
+    "license": "MIT",
+    "authors": "Microsoft",
+    "copyright": "© Microsoft Corporation. All rights reserved."
+  },
+  {
+    "name": "NPOI",
+    "version": "2.7.5",
+    "license": "Apache-2.0",
+    "authors": "Tony Qu,NPOI Contributors",
+    "copyright": "Nissl LLC"
+  },
+  {
+    "name": "NSax",
+    "version": "1.0.2",
+    "license": "LGPL-3.0-only",
+    "authors": "NSax",
+    "copyright": ""
+  },
+  {
+    "name": "PDFsharp",
+    "version": "6.2.4",
+    "license": "MIT",
+    "authors": "PDFsharp Team",
+    "copyright": "© 2026 empira"
+  },
+  {
+    "name": "SharpZipLib",
+    "version": "1.4.2",
+    "license": "MIT",
+    "authors": "ICSharpCode",
+    "copyright": "Copyright © 2000-2022 SharpZipLib Contributors"
+  },
+  {
+    "name": "SixLabors.Fonts",
+    "version": "1.0.1",
+    "license": "Apache-2.0",
+    "authors": "Six Labors and contributors",
+    "copyright": "Copyright © Six Labors"
+  },
+  {
+    "name": "SixLabors.ImageSharp",
+    "version": "2.1.11",
+    "license": "Apache-2.0",
+    "authors": "Six Labors and contributors",
+    "copyright": "Copyright © Six Labors"
+  },
+  {
+    "name": "System.Runtime.CompilerServices.Unsafe",
+    "version": "5.0.0",
+    "license": "MIT",
+    "authors": "Microsoft",
+    "copyright": "© Microsoft Corporation. All rights reserved."
+  },
+  {
+    "name": "System.Security.Cryptography.Pkcs",
+    "version": "8.0.1",
+    "license": "MIT",
+    "authors": "Microsoft",
+    "copyright": "© Microsoft Corporation. All rights reserved."
+  },
+  {
+    "name": "System.Security.Cryptography.Xml",
+    "version": "8.0.2",
+    "license": "MIT",
+    "authors": "Microsoft",
+    "copyright": "© Microsoft Corporation. All rights reserved."
+  },
+  {
+    "name": "System.Text.Encoding.CodePages",
+    "version": "5.0.0",
+    "license": "MIT",
+    "authors": "Microsoft",
+    "copyright": "© Microsoft Corporation. All rights reserved."
+  },
+  {
+    "name": "ZString",
+    "version": "2.6.0",
+    "license": "MIT",
+    "authors": "Cysharp",
+    "copyright": "© Cysharp, Inc."
+  }
+]

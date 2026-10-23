@@ -29,3 +29,8 @@ tests/template-inventory.log
 tests/*.log
 **/__pycache__/
 *.pyc
+ZTools.Mobile.iOS/Assets.xcassets/AppIcon.appiconset/AppIcon.png
+*.keystore
+*.jks
+*.p12
+*.mobileprovision

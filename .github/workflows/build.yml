@@ -32,6 +32,15 @@ jobs:
       - name: Compile Excel editor regression tests
         shell: pwsh
         run: dotnet build tests/EditorLifecycleSmoke.csproj --configuration Release --disable-build-servers /p:UseSharedCompilation=false /nr:false /m:1
+      - name: Verify offline mobile calculations and DWG/PDF output without Excel
+        shell: pwsh
+        run: |
+          dotnet build tests/OfflineSmoke/OfflineSmoke.csproj -c Release --disable-build-servers /p:RestorePackagesPath="$pwd/.tools/nuget" /p:UseSharedCompilation=false /nr:false /m:1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ./tests/OfflineSmoke/bin/Release/net8.0/OfflineSmoke.exe tests/offline-output
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m pip install olefile
+          python tools/verify_mobile_workbook.py
       - uses: actions/upload-artifact@v4
         with:
           name: CFL-SubmitTools-Windows

@@ -2,6 +2,8 @@
 
 The active application is C#/.NET 8 with a Chinese interface, the supplied CFL logo, and an offline Three.js/WebGL drawing viewer. It reads the original DWG templates directly and generates editable DWG files and vector PDF files without starting AutoCAD. No DXF conversion is involved.
 
+Native Android and iPhone projects also share a portable offline engine that reads/writes the original XLS workbook without Excel. Android APK and the iPhone Mac build kit are prepared under `dist/CFL-Mobile`. See [MOBILE-INSTALL.md](MOBILE-INSTALL.md) for installation, Mac signing and validation limits. The phone projects are separate from the Windows application.
+
 ## Build and run
 
 Requires Windows x64, Microsoft Excel desktop, a WebGL-capable browser, and the .NET 8 ASP.NET Core and Windows Desktop runtimes. Building requires the .NET 8 SDK; the SDK supplies those runtimes on the development computer.

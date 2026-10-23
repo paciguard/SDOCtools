@@ -222,6 +222,7 @@ public static class DrawingOutput
     public static readonly JsonSerializerOptions JsonOptions=new(){PropertyNamingPolicy=JsonNamingPolicy.CamelCase,WriteIndented=false};
 }
 
+#if !CFL_PORTABLE
 internal sealed class CflFontResolver:PdfSharp.Fonts.IFontResolver
 {
     readonly string path;
@@ -234,3 +235,4 @@ internal sealed class CflFontResolver:PdfSharp.Fonts.IFontResolver
     public byte[] GetFont(string faceName)=>File.ReadAllBytes(path);
     public PdfSharp.Fonts.FontResolverInfo ResolveTypeface(string familyName,bool bold,bool italic)=>new("cfl-cjk");
 }
+#endif

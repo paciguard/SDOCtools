@@ -1,0 +1,4 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0-windows</TargetFramework><UseWindowsForms>true</UseWindowsForms><ImplicitUsings>enable</ImplicitUsings><Nullable>disable</Nullable></PropertyGroup>
+  <ItemGroup><ProjectReference Include="..\..\ZTools.Offline\ZTools.Offline.csproj" /><ProjectReference Include="..\..\ZTools.Standalone\ZTools.Standalone.csproj" Aliases="WindowsEngine" /></ItemGroup>
+</Project>

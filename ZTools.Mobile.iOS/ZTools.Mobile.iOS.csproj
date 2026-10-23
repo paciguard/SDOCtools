@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0-ios</TargetFramework><OutputType>Exe</OutputType><SupportedOSPlatformVersion>15.0</SupportedOSPlatformVersion>
+    <RuntimeIdentifier>ios-arm64</RuntimeIdentifier><ApplicationId>com.paciguard.sdoctools</ApplicationId>
+    <ImplicitUsings>enable</ImplicitUsings><Nullable>disable</Nullable><UseInterpreter>true</UseInterpreter><MtouchLink>None</MtouchLink><PublishTrimmed>false</PublishTrimmed>
+    <XSAppIconAssets>Assets.xcassets/AppIcon.appiconset</XSAppIconAssets>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ZTools.Offline\ZTools.Offline.csproj" />
+    <BundleResource Include="..\ZTools.Mobile.Shared\web\**\*" Link="web\%(RecursiveDir)%(Filename)%(Extension)" />
+    <BundleResource Include="..\ZTools.Standalone\wwwroot\vendor\*.js" Link="web\vendor\%(Filename)%(Extension)" />
+    <BundleResource Include="..\ZTools.Standalone\wwwroot\cfl-logo.jpg" Link="web\cfl-logo.jpg" />
+    <ImageAsset Include="Assets.xcassets\**\*" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0-android35.0</TargetFramework><OutputType>Exe</OutputType>
+    <SupportedOSPlatformVersion>26.0</SupportedOSPlatformVersion>
+    <ApplicationId>com.paciguard.sdoctools</ApplicationId><ApplicationVersion>1</ApplicationVersion><ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+    <ApplicationTitle>凯乐提交工具</ApplicationTitle><ImplicitUsings>enable</ImplicitUsings><Nullable>disable</Nullable>
+    <AndroidPackageFormats>apk</AndroidPackageFormats><RuntimeIdentifiers>android-arm64;android-x64</RuntimeIdentifiers>
+    <PublishTrimmed>false</PublishTrimmed><AndroidLinkMode>None</AndroidLinkMode><RunAOTCompilation>false</RunAOTCompilation>
+    <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ZTools.Offline\ZTools.Offline.csproj" />
+    <AndroidAsset Include="..\ZTools.Mobile.Shared\web\**\*" Link="web\%(RecursiveDir)%(Filename)%(Extension)" />
+    <AndroidAsset Include="..\ZTools.Standalone\wwwroot\vendor\*.js" Link="web\vendor\%(Filename)%(Extension)" />
+    <AndroidAsset Include="..\ZTools.Standalone\wwwroot\cfl-logo.jpg" Link="web\cfl-logo.jpg" />
+  </ItemGroup>
+</Project>

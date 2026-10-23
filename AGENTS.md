@@ -2,6 +2,7 @@
 
 - Communicate with the owner in English. Keep application screens, dialogs, buttons, and messages in Chinese and use the supplied CFL logo.
 - The active application is the standalone C# / Three.js / WebGL application. Use DWG templates directly. Do not introduce a DXF conversion requirement or an AutoCAD runtime dependency.
+- The owner also requested native offline Android and iPhone apps, with installation packages inside the project. Keep the Windows app available. The mobile engine must run without a Windows server or Excel COM. Android packages go under dist/CFL-Mobile/Android. The owner will run the supplied Mac signing steps; distinguish the iPhone Mac build kit from a signed, installable IPA and never claim an unproduced IPA exists.
 - Embed GA.dwg, PID.dwg, SEC.dwg and the current ZTools.xls as application resources. Preserve the original source files. New Project extracts an editable workbook copy; Open Project retains existing work. Keep the current buttons and open Excel only on request; do not automatically open Excel or create a new project on every launch.
 - Preserve `Referrings/Ztools/ZTools.xls` and every original reference file byte for byte. Excel remains the input template and database. Edit only a project workbook copy, with VBA macros disabled.
 - Preserve the SEC calculation fix: use worksheet `Sheet1` by name, return the actual SEC block name separately from the material-list name, and match the material-list name exactly against `List-all` row 2. Report missing or ambiguous data instead of guessing.
