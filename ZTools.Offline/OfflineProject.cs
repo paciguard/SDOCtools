@@ -92,7 +92,7 @@ public sealed class OfflineProject
     public ParameterForm Parameters(string group,int index)
     {
         if(index<0||index>=30)throw new ArgumentOutOfRangeException(nameof(index));using var b=Book();var fields=new List<InputField>();
-        void Field(string sheet,string address,string label){var point=new CellReference(address);var source=((ExcelBook)b.Book).Data.GetSheet(sheet).GetRow(point.Row)?.GetCell(point.Col);bool readOnly=source?.CellType==NPOI.SS.UserModel.CellType.Formula;string value=b.Cell(sheet,address);if(source!=null&&NPOI.SS.UserModel.DateUtil.IsCellDateFormatted(source))value=((ExcelBook)b.Book).Formatter.FormatCellValue(source,((ExcelBook)b.Book).Evaluator);fields.Add(new(sheet,address,string.IsNullOrWhiteSpace(label)?address:label,value,Choices((ExcelBook)b.Book,sheet,address),readOnly));}
+        void Field(string sheet,string address,string label){var point=new CellReference(address);var source=((ExcelBook)b.Book).Data.GetSheet(sheet).GetRow(point.Row)?.GetCell(point.Col);bool readOnly=source?.CellType==NPOI.SS.UserModel.CellType.Formula;string value=b.Cell(sheet,address);if(source!=null&&(source.CellType==NPOI.SS.UserModel.CellType.Numeric||(source.CellType==NPOI.SS.UserModel.CellType.Formula&&source.CachedFormulaResultType==NPOI.SS.UserModel.CellType.Numeric))&&NPOI.SS.UserModel.DateUtil.IsCellDateFormatted(source))value=((ExcelBook)b.Book).Formatter.FormatCellValue(source,((ExcelBook)b.Book).Evaluator);fields.Add(new(sheet,address,string.IsNullOrWhiteSpace(label)?address:label,value,Choices((ExcelBook)b.Book,sheet,address),readOnly));}
         string title;
         switch(group)
         {
