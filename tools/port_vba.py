@@ -342,6 +342,11 @@ def generate():
         source = re.sub(r'If ThisDrawing\.Layouts\.Item\("Model"\)\.Block\(Index\)\.Name = "(?:AAA|BBB)" Then', 'If True Then', source, flags=re.I)
         # DATE is a formatted Excel date; Value2 would expose the OLE serial number.
         source = re.sub(r'(attrib\.TextString\s*=\s*xlsheet\.range\(\("C" & 6\)\))', r'\1.Text', source, flags=re.I)
+        if kind == 'GA':
+            # Only the main pump block varies by edition. Keep the ZE family
+            # and k/m=8 so all auxiliary block selections match the ZE8 path.
+            source = source.replace('If Ver = 7 Then pump = "ZE7"', '')
+            source = source.replace('InsertBlock p, pump, 1, 1, 1, 0', 'InsertBlock p, PumpDatabaseSheet(pump, i - 40), 1, 1, 1, 0')
         if kind == 'PID':
             source = re.sub(r'ThisDrawing\.Application\.ActiveDocument\.ModelSpace\.InsertBlock ([pu]), (p[1-6]), 1, 1, 1, 0', r'InsertPidPlan \1, \2', source)
         if kind == 'SEC':

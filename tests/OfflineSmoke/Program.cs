@@ -1,6 +1,9 @@
 using ZTools.Offline;
 using System.Text.Json;
 using ZTools.Standalone;
+using ZTools.Engine;
+using ACadSharp.IO;
+using ACadSharp.Entities;
 var folder=args.Length>0?args[0]:"tests/offline-output";
 var app=new OfflineProject(folder);
 app.Create();
@@ -48,6 +51,31 @@ using(var book=new ZTools.Engine.ExcelBook(file))
 }
 seventh.Generate(new[]{"GA"},new[]{1,3,4});
 if(seventh.Files().Length!=3)throw new Exception("Expected three ZE7 GA drawing pairs");
+foreach(var output in seventh.Files())
+{
+    var drawing=DwgReader.Read(seventh.File(output.Id,"dwg"));
+    var names=drawing.Entities.OfType<Insert>().Select(i=>i.Block.Name).ToArray();
+    if(!names.Contains("ZE7")||names.Contains("ZE"))throw new Exception("Seventh-edition GA must contain the ZE7 main block");
+    if(!names.Contains("jibenchicun8"))throw new Exception("ZE7 GA must retain the ZE8 auxiliary dimension block");
+}
+// Hold all calculated data/options fixed and compare the actual insertion
+// paths. Changing the edition must change only the main block name.
+using(var session=new WorkbookSession(seventh.Workbook))
+{
+    session.Book.Worksheets["Sheet1"].Range["C19"].Value2=41;
+    string[] Blocks(string standard)
+    {
+        session.Book.Worksheets["input"].Range["E22"].Value2=standard;
+        using var template=TemplateResources.Open("GA.dwg");var drawing=DwgReader.Read(template);
+        var engine=new SubmissionEngine(session,_=>{});engine.Drawing=new CadAdapter(drawing);engine.BuildGA();
+        return drawing.Entities.OfType<Insert>().Select(i=>i.Block.Name).ToArray();
+    }
+    var seven=Blocks("7版");var eight=Blocks("8版");
+    if(!seven.Contains("ZE7")||!eight.Contains("ZE"))throw new Exception("Unexpected GA main blocks");
+    if(!seven.Where(n=>n!="ZE7").Order().SequenceEqual(eight.Where(n=>n!="ZE").Order()))throw new Exception("ZE7 auxiliary blocks differ from the ZE8 path");
+}
+Console.WriteLine("ZE7_GA_BLOCKS_OK saved DWGs use ZE7; all auxiliary block names match ZE8 for the same data/options");
+
 seventh.SaveParameters("equipment",1,new[]{new InputChange("input","N22","ZE80-2200")});
 bool missingRejected=false;try{seventh.Calculate();}catch(InvalidOperationException ex){missingRejected=ex.Message.Contains("ZE80-2200");}
 if(!missingRejected)throw new Exception("A missing ZE7 model must fail instead of using ZE");

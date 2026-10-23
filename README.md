@@ -37,7 +37,7 @@ The build embeds the original `Referrings/Ztools/TEMPLATE/GA.dwg`, `PID.dwg`, `S
 
 ## GA database selection
 
-For pump family **ZE** with standard **7版** (or the legacy **7th** value), GA dimensions and weights come from worksheet **ZE7**, matched to the pump model and baseplate, including the voltage variant. Other ZE editions use **ZE**. Each equipment row selects its own sheet, so mixed editions can share one project. Missing ZE7 records stop calculation rather than falling back to ZE. The original Excel template and database are preserved.
+For pump family **ZE** with standard **7版** (or the legacy **7th** value), GA dimensions and weights come from worksheet **ZE7**, matched to the pump model and baseplate, including the voltage variant. Other ZE editions use **ZE**. Each equipment row selects its own sheet, so mixed editions can share one project. Missing ZE7 records stop calculation rather than falling back to ZE. The GA drawing inserts the existing **ZE7** main block from **GA.dwg**; all auxiliary block selections follow the same path as ZE8. The original Excel template and database are preserved.
 
 ## SEC calculation behavior
 

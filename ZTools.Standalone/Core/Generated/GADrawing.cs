@@ -230,10 +230,6 @@ namespace ZTools.Engine {
             }
             // Normalized rule line 107
             if (Vb.Bool(Vb.Eq(@pump, "ZE"))) {
-                // Normalized rule line 108
-                if (Vb.Bool(Vb.Eq(@ver, 7))) {
-                    @pump = "ZE7";
-                }
                 // Normalized rule line 109
                 @k = 8;
                 // Normalized rule line 110
@@ -525,7 +521,7 @@ namespace ZTools.Engine {
                 // Normalized rule line 309
             }
             // Normalized rule line 311
-            Drawing.Application.ActiveDocument.ModelSpace.InsertBlock(@p, @pump, 1, 1, 1, 0);
+            Drawing.Application.ActiveDocument.ModelSpace.InsertBlock(@p, PumpDatabaseSheet(@pump, Vb.Sub(@i, 40)), 1, 1, 1, 0);
             // Normalized rule line 312
             Drawing.Application.ActiveDocument.ModelSpace.InsertBlock(@p, Vb.Cat("jibenchicun", @k), 1, 1, 1, 0);
             // Normalized rule line 313
