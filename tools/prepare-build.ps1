@@ -7,8 +7,11 @@ function Request-Cfl([string]$Url,[string]$Token=''){
     $arguments=@('--noproxy','*','--silent','--show-error','--max-time','8','--output',$temp,'--write-out','%{http_code}')
     if($Token){$arguments+=@('-H',"X-CFL-Token: $Token",'-H','Content-Type: application/json','--data','{}')}
     $arguments+=$Url
-    try{$status=& $curl @arguments 2>$null}catch{return $null}
-    if($LASTEXITCODE -ne 0){return $null}
+    # An absent server is expected. Do not leak curl's exit code to the caller.
+    $previousExit=$global:LASTEXITCODE
+    try{$status=& $curl @arguments 2>$null;$requestExit=$LASTEXITCODE}catch{return $null}
+    finally{$global:LASTEXITCODE=$previousExit}
+    if($requestExit -ne 0){return $null}
     $body=Get-Content -LiteralPath $temp -Raw
     return @{status=[string]$status;body=$body}
 }
