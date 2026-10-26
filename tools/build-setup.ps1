@@ -46,8 +46,11 @@ $setup=Join-Path $output "CFL-SubmitTools-Setup-$Version-win-x64.exe"
 if(-not(Test-Path -LiteralPath $setup)){throw 'The setup executable was not created.'}
 $commit=& git -C $root rev-parse HEAD
 if($LASTEXITCODE -ne 0){throw 'Could not record the source commit.'}
-$hash=(Get-FileHash -LiteralPath $setup -Algorithm SHA256).Hash.ToLowerInvariant()
-@{file=(Split-Path -Leaf $setup);version=$Version;sourceCommit=$commit;sha256=$hash;bytes=(Get-Item $setup).Length;runtime='win-x64 self-contained';signing='Unsigned; no publisher signing certificate configured'} |
+$setupStream=[IO.File]::OpenRead($setup)
+$sha256=[Security.Cryptography.SHA256]::Create()
+try{$hash=[BitConverter]::ToString($sha256.ComputeHash($setupStream)).Replace('-','').ToLowerInvariant()}
+finally{$sha256.Dispose();$setupStream.Dispose()}
+@{file=(Split-Path -Leaf $setup);version=$Version;configuration=$Configuration;sourceCommit=$commit;sha256=$hash;bytes=(Get-Item $setup).Length;runtime='win-x64 self-contained';signing='Unsigned; no publisher signing certificate configured'} |
     ConvertTo-Json | Set-Content (Join-Path $output 'package-manifest.json') -Encoding UTF8
 "$hash  $(Split-Path -Leaf $setup)" | Set-Content ($setup+'.sha256') -Encoding ASCII
 Write-Host "Windows setup: $setup"

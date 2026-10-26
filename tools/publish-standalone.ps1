@@ -12,8 +12,8 @@ function Invoke-Dotnet([string[]]$Arguments,[string]$Phase){
     & dotnet @Arguments 2>&1 | Tee-Object -FilePath ($log+'.log') | Out-Host
     if($LASTEXITCODE -ne 0){throw "dotnet $Phase failed with exit code $LASTEXITCODE."}
 }
-$runtimeArguments=@()
-if($SelfContained){$runtimeArguments=@('-r','win-x64','-p:SelfContained=true')}
+$runtimeArguments=@('-p:BuildWindowsSetupOnRebuild=false')
+if($SelfContained){$runtimeArguments+=@('-r','win-x64','-p:SelfContained=true')}
 Invoke-Dotnet (@('restore',(Join-Path $projectRoot 'ZTools.Standalone\ZTools.Standalone.csproj'),'--packages',(Join-Path $projectRoot '.tools\nuget'),'--disable-build-servers','/nr:false','/m:1')+$runtimeArguments) 'restore'
 Invoke-Dotnet (@('publish',(Join-Path $projectRoot 'ZTools.Standalone\ZTools.Standalone.csproj'),'--no-restore','--configuration',$Configuration,'--output',$destination,'--disable-build-servers','/p:UseSharedCompilation=false','/nr:false','/m:1','-v:minimal')+$runtimeArguments) 'publish'
 Copy-Item -LiteralPath (Join-Path $projectRoot 'tools\Start.ps1') -Destination (Join-Path $destination 'Start.ps1') -Force
@@ -43,6 +43,5 @@ foreach($package in 'acadsharp/3.8.0','pdfsharp-gdi/6.2.4'){
 Copy-Item -LiteralPath (Join-Path $projectRoot 'ZTools.Standalone/wwwroot/vendor/THREE-LICENSE.txt') -Destination (Join-Path $licenses 'three-LICENSE.txt') -Force
 if(Test-Path -LiteralPath (Join-Path $projectRoot 'licenses')){Copy-Item -Path (Join-Path $projectRoot 'licenses/*') -Destination $licenses -Recurse -Force}
 Write-Host "Built standalone application: $destination\Start.ps1"
-# Start-Process checks its own exit code above; it does not reset LASTEXITCODE.
-# PowerShell CI wrappers use this value as the script's final process status.
+# All native invocations above are checked. CI wrappers use this final status.
 $global:LASTEXITCODE=0

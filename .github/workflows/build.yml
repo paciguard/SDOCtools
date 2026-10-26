@@ -18,11 +18,21 @@ jobs:
           python-version: '3.12'
       - name: Verify original references
         run: python tools/verify_sources.py
-      - name: Publish standalone application
+      - name: Ensure Windows setup compiler
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "${env:ProgramFiles(x86)}/Inno Setup 6/ISCC.exe")) {
+            choco install innosetup --yes --no-progress --limit-output
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+      - name: Publish standalone application and setup
         shell: pwsh
         run: ./tools/build.ps1
       - name: Verify standalone package
         run: python tools/verify_project.py
+      - name: Verify setup installation, upgrade and uninstall
+        shell: pwsh
+        run: ./tests/setup.ps1
       - name: Verify application startup
         shell: pwsh
         run: ./tests/startup.ps1
@@ -57,3 +67,8 @@ jobs:
         with:
           name: CFL-SubmitTools-Windows
           path: dist/CFL-SubmitTools
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CFL-SubmitTools-Windows-Setup
+          path: dist/CFL-Setup
+          if-no-files-found: error
