@@ -50,12 +50,12 @@ public sealed class Workspace:IDisposable
     }
     public object Create(string parent)
     {
-        EnsureIdle();if(string.IsNullOrEmpty(parent)){using var picker=new FolderBrowserDialog {Description="请选择项目保存位置"};if(picker.ShowDialog()!=DialogResult.OK)return State();parent=picker.SelectedPath;}
+        EnsureIdle();if(string.IsNullOrEmpty(parent)){using var picker=new FolderBrowserDialog {Description="请选择项目保存位置",UseDescriptionForTitle=true};if(ProjectDialog.Show(picker)!=DialogResult.OK)return State();parent=picker.SelectedPath;}
         workbookPath=Path.Combine(ProjectPaths.CreateJob(parent),"ZTools.xls");LastOutput=null;needsCalculation=true;notice=null;Report("项目已创建："+workbookPath);return State(true);
     }
     public object Select(string path)
     {
-        EnsureIdle();if(string.IsNullOrEmpty(path)){using var picker=new OpenFileDialog{Title="打开项目 Excel 副本",Filter="项目工作簿|ZTools.xls"};if(picker.ShowDialog()!=DialogResult.OK)return State();path=picker.FileName;}
+        EnsureIdle();if(string.IsNullOrEmpty(path)){using var picker=new OpenFileDialog{Title="打开项目 Excel 副本",Filter="项目工作簿|ZTools.xls"};if(ProjectDialog.Show(picker)!=DialogResult.OK)return State();path=picker.FileName;}
         path=Path.GetFullPath(path);if(ProjectPaths.IsSourceWorkbook(path))throw new InvalidOperationException("请打开项目副本。原始模板通过“新建项目”完整复制后使用。");
         using(var test=new WorkbookSession(path,false)) { }
         workbookPath=path;LastOutput=null;needsCalculation=true;notice=null;Report("已打开项目："+path);return State(true);
