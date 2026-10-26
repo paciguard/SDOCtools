@@ -28,7 +28,7 @@ function Get-SharedFileHash([string]$Path){
 $inventoryLog=Join-Path $projectRoot ('.tools/embedded-inventory-'+[Guid]::NewGuid().ToString('N'))
 & (Join-Path $destination 'ZTools.Standalone.exe') --verify-templates 2> ($inventoryLog+'.err') | Set-Content ($inventoryLog+'.json') -Encoding UTF8
 if($LASTEXITCODE -ne 0){throw 'Embedded template verification failed.'}
-$inventory=@(Get-Content ($inventoryLog+'.json') -Raw|ConvertFrom-Json)
+$inventory=Get-Content ($inventoryLog+'.json') -Raw|ConvertFrom-Json
 if($inventory.Count -ne 4){throw 'Expected three embedded DWGs and the embedded Excel workbook.'}
 foreach($asset in $inventory){
     $relative=if($asset.name -eq 'ZTools.xls'){'Referrings\Ztools\ZTools.xls'}else{'Referrings\Ztools\TEMPLATE\'+$asset.name}
