@@ -7,6 +7,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZTools.Standalone", "ZTools
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZTools.Calculation", "ZTools.Calculation\ZTools.Calculation.csproj", "{A053C2C1-0B43-4CC6-B43D-8E76E19ABC9A}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Windows Setup", "Windows Setup", "{EDC60715-78E7-4694-B12B-C6B5150F6680}"
+	ProjectSection(SolutionItems) = preProject
+		tools\build-setup.ps1 = tools\build-setup.ps1
+		tools\installer\CFL-SubmitTools.iss = tools\installer\CFL-SubmitTools.iss
+		tools\installer\INSTALL-WINDOWS.txt = tools\installer\INSTALL-WINDOWS.txt
+		tests\setup.ps1 = tests\setup.ps1
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

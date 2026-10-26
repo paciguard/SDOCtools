@@ -8,7 +8,19 @@ Mobile version 1.1 (build 2) enables **生成 DWG＋PDF** after a successful com
 
 ## Build and run
 
-Requires Windows x64, Microsoft Excel desktop, a WebGL-capable browser, and the .NET 8 ASP.NET Core and Windows Desktop runtimes. Building requires the .NET 8 SDK; the SDK supplies those runtimes on the development computer.
+Requires Windows x64 and a WebGL-capable browser. Editing in Excel requires Microsoft Excel desktop. The setup package includes the .NET runtime; the ordinary framework-dependent folder build requires the .NET 8 ASP.NET Core and Windows Desktop runtimes. Building requires the .NET 8 or 9 SDK.
+
+### Windows setup package
+
+Run `powershell -NoProfile -ExecutionPolicy Bypass -File tools/build-setup.ps1` with Inno Setup 6.5 or later installed. This publishes the self-contained `win-x64` application, verifies all four embedded templates, and creates `dist/CFL-Setup/CFL-SubmitTools-Setup-1.0.0-win-x64.exe`, its SHA-256 file and a source-commit manifest. A custom compiler path can be supplied with `-InnoSetupCompiler`; use `-Version` for a subsequent release number.
+
+The Chinese installer uses the supplied CFL logo, installs for the current user under `%LOCALAPPDATA%/Programs/CFL/SubmitTools`, and creates Start menu and optional desktop shortcuts plus an uninstaller. Windows 10 1809 or later is required. Save Excel edits and exit the app before upgrading. Project workbooks should be stored in Documents or another project folder. Uninstall removes installed files, leaving user-created project files. No publisher signing certificate is configured, so this setup executable is unsigned. `tests/setup.ps1` verifies installation, startup, upgrade, and uninstall in a private folder; it refuses to replace an existing registered installation.
+
+### Visual Studio and GitHub
+
+Open `ZTools.sln` directly from this repository's local folder in Visual Studio 2022 (17.12 or later when using .NET 9). The solution references the local C# projects by relative path. Build or debug `ZTools.Standalone`; the existing launch profile uses port 5100. The `WindowsSetup` publish profile produces the self-contained application folder; run `tools/build-setup.ps1` to wrap it in the setup executable. Packaging files are also visible in the solution's **Windows Setup** folder.
+
+Visual Studio's Git Changes / Git Repository windows use this folder's `.git` repository and `origin` at `https://github.com/paciguard/SDOCtools.git`. Pull before editing, then commit and push checked changes on `main`. No separate source copy or legacy solution source-control binding is needed. Build products stay under ignored `dist/` and are not committed to GitHub.
 
 Run `powershell -ExecutionPolicy Bypass -File tools/build.ps1`, then launch `dist/CFL-SubmitTools/Start.ps1` or `ZTools.Standalone.exe` inside that published folder. Keep the complete application folder, including its libraries and `wwwroot`. GA.dwg, PID.dwg, SEC.dwg and the complete ZTools.xls input/database template are embedded in the application assembly; no external business-template files or `Referrings` folder are needed at runtime. The interface opens at http://127.0.0.1:5099. Third-party JavaScript is bundled locally; drawing generation does not require an internet connection.
 

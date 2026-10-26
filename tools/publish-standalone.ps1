@@ -1,4 +1,4 @@
-param([ValidateSet('Debug','Release')][string]$Configuration='Release')
+param([ValidateSet('Debug','Release')][string]$Configuration='Release',[switch]$SelfContained)
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path -Parent $PSScriptRoot
 $destination=Join-Path $projectRoot 'dist\CFL-SubmitTools'
@@ -9,15 +9,13 @@ $env:DOTNET_CLI_TELEMETRY_OPTOUT='1'
 New-Item -ItemType Directory -Force -Path (Join-Path $projectRoot '.tools')|Out-Null
 function Invoke-Dotnet([string[]]$Arguments,[string]$Phase){
     $log=Join-Path $projectRoot ('.tools/build-'+$Phase+'-'+[Guid]::NewGuid().ToString('N'))
-    $argumentLine=($Arguments|ForEach-Object {'"'+$_+'"'}) -join ' '
-    $process=Start-Process dotnet -ArgumentList $argumentLine -WorkingDirectory $projectRoot -WindowStyle Hidden -PassThru -RedirectStandardOutput ($log+'.log') -RedirectStandardError ($log+'.err')
-    if(-not $process.WaitForExit(1200000)){throw "dotnet $Phase did not finish within 20 minutes."}
-    Get-Content ($log+'.log')
-    Get-Content ($log+'.err')
-    if($process.ExitCode -ne 0){throw "dotnet $Phase failed with exit code $($process.ExitCode)."}
+    & dotnet @Arguments 2>&1 | Tee-Object -FilePath ($log+'.log') | Out-Host
+    if($LASTEXITCODE -ne 0){throw "dotnet $Phase failed with exit code $LASTEXITCODE."}
 }
-Invoke-Dotnet @('restore',(Join-Path $projectRoot 'ZTools.Standalone\ZTools.Standalone.csproj'),'--packages',(Join-Path $projectRoot '.tools\nuget'),'--disable-build-servers','/nr:false','/m:1') 'restore'
-Invoke-Dotnet @('publish',(Join-Path $projectRoot 'ZTools.Standalone\ZTools.Standalone.csproj'),'--no-restore','--configuration',$Configuration,'--output',$destination,'--disable-build-servers','/p:UseSharedCompilation=false','/nr:false','/m:1','-v:minimal') 'publish'
+$runtimeArguments=@()
+if($SelfContained){$runtimeArguments=@('-r','win-x64','-p:SelfContained=true')}
+Invoke-Dotnet (@('restore',(Join-Path $projectRoot 'ZTools.Standalone\ZTools.Standalone.csproj'),'--packages',(Join-Path $projectRoot '.tools\nuget'),'--disable-build-servers','/nr:false','/m:1')+$runtimeArguments) 'restore'
+Invoke-Dotnet (@('publish',(Join-Path $projectRoot 'ZTools.Standalone\ZTools.Standalone.csproj'),'--no-restore','--configuration',$Configuration,'--output',$destination,'--disable-build-servers','/p:UseSharedCompilation=false','/nr:false','/m:1','-v:minimal')+$runtimeArguments) 'publish'
 Copy-Item -LiteralPath (Join-Path $projectRoot 'tools\Start.ps1') -Destination (Join-Path $destination 'Start.ps1') -Force
 Copy-Item -LiteralPath (Join-Path $projectRoot 'THIRD-PARTY-NOTICES.md') -Destination $destination -Force
 Copy-Item -LiteralPath (Join-Path $projectRoot 'README.md') -Destination $destination -Force
@@ -28,8 +26,8 @@ function Get-SharedFileHash([string]$Path){
     finally{$stream.Dispose();$hasher.Dispose()}
 }
 $inventoryLog=Join-Path $projectRoot ('.tools/embedded-inventory-'+[Guid]::NewGuid().ToString('N'))
-$inspect=Start-Process -FilePath (Join-Path $destination 'ZTools.Standalone.exe') -ArgumentList '--verify-templates' -WindowStyle Hidden -PassThru -RedirectStandardOutput ($inventoryLog+'.json') -RedirectStandardError ($inventoryLog+'.err')
-if(-not $inspect.WaitForExit(30000) -or $inspect.ExitCode -ne 0){throw 'Embedded template verification failed.'}
+& (Join-Path $destination 'ZTools.Standalone.exe') --verify-templates 2> ($inventoryLog+'.err') | Set-Content ($inventoryLog+'.json') -Encoding UTF8
+if($LASTEXITCODE -ne 0){throw 'Embedded template verification failed.'}
 $inventory=@(Get-Content ($inventoryLog+'.json') -Raw|ConvertFrom-Json)
 if($inventory.Count -ne 4){throw 'Expected three embedded DWGs and the embedded Excel workbook.'}
 foreach($asset in $inventory){
