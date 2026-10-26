@@ -289,6 +289,8 @@ namespace ZTools.Engine {
                     // Normalized rule line 254
                 }
                 // Normalized rule line 257
+                report("正在查询第 " + (Vb.Int(@k) + 1) + " 台泵：" + Vb.Text(@str4) + "（" + Vb.Text(@pump_type) + "）……");
+                @databaseoffset = FindDatabaseOffset(@pump_type, @str4, @k);
                 Book.Worksheets["Sheet1"].Range[Vb.Cat("F", Vb.Add(40, @k))].Value2 = ExcelApp.WorksheetFunction.VLookup(@str4, Book.Worksheets[@pump_type].Range["$a$31:$bb$2000"], 24, false);
                 // Normalized rule line 265
                 @progress = Vb.Mul(5, @counterprogress);

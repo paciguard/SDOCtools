@@ -320,6 +320,13 @@ def generate():
     source = source[:start] + '\nCalculateSectionNames k\n' + source[end:]
     source = re.sub(r'Sheets\(1\)', 'Sheets("Sheet1")', source, flags=re.I)
     body = Port().convert(source)
+    # Fail with the selected database/model/baseplate/input row before Excel's
+    # first VLookup can replace the useful missing-record diagnosis with 1004.
+    first_lookup = 'Book.Worksheets["Sheet1"].Range[Vb.Cat("F", Vb.Add(40, @k))].Value2 = ExcelApp.WorksheetFunction.VLookup'
+    assert body.count(first_lookup) == 1
+    body = body.replace(first_lookup,
+        'report("正在查询第 " + (Vb.Int(@k) + 1) + " 台泵：" + Vb.Text(@str4) + "（" + Vb.Text(@pump_type) + "）……");\n'
+        '                @databaseoffset = FindDatabaseOffset(@pump_type, @str4, @k);\n                ' + first_lookup)
     write('WorkbookCalculations', body, 'public void TransferData()')
     for kind in ('GA','PID','SEC'):
         source = (ROOT/f'migration/legacy/{kind}/Module1.bas').read_text(encoding='utf-8')

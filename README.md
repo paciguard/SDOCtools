@@ -45,6 +45,8 @@ The calculations address the worksheet **Sheet1 by name**, including when sheets
 
 Known source-data gap: the `ZAG(LK6)_QWL` list references part `411.20`, absent from the supplied `List-detail` sheet. That variant stops with an explicit error until the database is completed by its owner.
 
+Calculation progress is displayed while Excel opens, queries each pump, and saves the results. A missing pump/baseplate record reports the selected database, model, baseplate and input row before Excel's generic VLOOKUP error can hide the cause. For example, `ZE80-2200 / 160L` with standard `7版` requires that exact record in `ZE7`; an existing record in `ZE` does not satisfy it. Confirm the intended edition and supply the correct database record rather than changing editions merely to bypass an error. See [the calculation investigation](migration/calculation-response-20261026.md).
+
 ## Project layout and checks
 
 - `ZTools.Standalone/`: active application, independent of Autodesk assemblies.
@@ -55,6 +57,7 @@ Known source-data gap: the `ZAG(LK6)_QWL` list references part `411.20`, absent 
 - `tools/verify_sources.py`: verifies original-reference hashes against the selected snapshot. Current source snapshot: `migration/source-manifest-20261023-embedded.json`, adopting the owner's current Excel template for embedding; earlier snapshots remain historical records.
 - `tools/verify_project.py`: checks standalone wiring and the published reference files.
 - `tests/standalone-api.ps1`: exercises Excel-backed forms, parameter and print-setting persistence, calculation, and two complete GA/PID/SEC output sets through the app.
+- `tests/calculation-response.ps1`: requires desktop Excel; checks a missing ZE7 record on a private workbook copy, responsive progress, unchanged saved inputs/output formulas, and successful six-row calculation afterward. Pass `-Workbook <path>` to reproduce a supplied project without editing it.
 - `tests/startup.ps1`: checks detached executable launch, repeat launches, safe rebuild preparation, the Visual Studio address, and startup error reporting without opening Excel.
 - `tests/embedded-templates.ps1`: runs a package outside the checkout with no external templates, verifies all four embedded hashes, reads/writes the three DWGs, and checks byte-identical Excel project extraction without requiring Office.
 - `tests/EditorLifecycleSmoke.csproj`: requires desktop Excel; checks save-and-return, saved/closed workbook recovery, disconnected Excel, save-error retry, and preservation of another open workbook, using private workbook copies.

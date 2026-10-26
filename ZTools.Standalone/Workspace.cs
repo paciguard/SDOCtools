@@ -91,7 +91,14 @@ public sealed class Workspace:IDisposable
     }
     public object Calculate(bool utility=false)
     {
-        using(var book=Open()){var engine=new SubmissionEngine(book,Report);if(utility)engine.CalculateUtility();else{engine.Calculate();needsCalculation=false;notice=null;}}return State(true);
+        if(!utility)needsCalculation=true;
+        Report("正在打开项目 Excel，准备计算……");
+        try
+        {
+            using(var book=Open()){var engine=new SubmissionEngine(book,Report);if(utility)engine.CalculateUtility();else{engine.Calculate();needsCalculation=false;notice=null;}}
+            Report("正在读取计算结果，返回工作台……");return State(true);
+        }
+        catch(Exception error){Report("计算未完成："+error.Message);throw;}
     }
     public object Refresh(){EnsureIdle();needsCalculation=true;return State(true);}
     public ParameterForm Parameters(string group,int index)

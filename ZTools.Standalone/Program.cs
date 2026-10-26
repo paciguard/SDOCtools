@@ -55,6 +55,9 @@ app.MapPost("/api/action/close",async()=>
     return new{closed=true};
 });
 app.MapGet("/api/state",async()=>new{token,data=await sta.Run(()=>workspace.State())});
+// Progress contains only the thread-safe log. Never queue it behind Excel:
+// the browser must still receive updates while a COM operation is running.
+app.MapGet("/api/progress",()=>new{log=workspace.Log.ToArray()});
 app.MapPost("/api/action/{command}",async(string command,ActionRequest request)=>await sta.Run(()=>command switch
 {
     "new"=>workspace.Create(request.Path),"open"=>workspace.Select(request.Path),

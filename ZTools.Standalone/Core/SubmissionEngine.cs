@@ -69,6 +69,7 @@ namespace ZTools.Engine
                         if (value is System.Runtime.InteropServices.ErrorWrapper || string.IsNullOrWhiteSpace(Vb.Text(value)))
                             throw new InvalidOperationException("计算结果缺失：Sheet1!" + address + "。请检查泵型号、电机、底座及数据库匹配情况。");
                     }
+                report("正在校验冲洗方案并保存项目 Excel……");
                 PreparePid(count);
                 workbook.Save();
                 report("已使用工作簿内置数据库完成 " + count + " 台泵的数据计算。");
@@ -233,8 +234,14 @@ namespace ZTools.Engine
             string baseplate = Get("input",21+k,21);
             if (Get("input",21+k,22) != "380V") baseplate += "(6KV)";
             var data = (object[,])Book.Worksheets[sheet].Range["A32:F2000"].Value2;
+            int found = -1;
             for (int r = 1; r <= data.GetLength(0); r++)
-                if (Vb.Text(data[r,1]) == model && Vb.Text(data[r,6]) == baseplate) return r-1;
+                if (Vb.Text(data[r,1]) == model && Vb.Text(data[r,6]) == baseplate)
+                {
+                    if (found >= 0) throw new InvalidOperationException(sheet + " 数据库中存在重复的泵与底座记录：" + model + " / " + baseplate + "（input 第 " + (21+k) + " 行）。");
+                    found = r-1;
+                }
+            if (found >= 0) return found;
             throw new InvalidOperationException(sheet + " 数据库中未找到泵与底座的匹配记录：" + model + " / " + baseplate + "（输入表第 " + (21+k) + " 行）。");
         }
         private sealed class RangeSnapshot
