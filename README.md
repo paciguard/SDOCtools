@@ -25,6 +25,8 @@ In Visual Studio 2022, open `ZTools.sln`, set `ZTools.Standalone` as the startup
 4. Click **计算项目数据** after opening a project or changing equipment inputs. Generation is blocked until calculation succeeds. Select devices and drawing types, then click **生成 DWG ＋ PDF**.
 5. Preview the result, zoom with the mouse wheel, pan by dragging, and download either format. A3 landscape PDF window, margins, and copy count are stored as a custom property of the project Excel workbook.
 
+After a drawing batch is successfully saved, **图纸生成完成** displays its output folder. Choose **确定** to return to the workbench. Android/iPhone show the same completion dialog with the saved DWG/PDF count. Failed creation does not show a success prompt.
+
 Results are stored in `<project>/Output-Standalone/<timestamp>/GA|PID|SEC`. Each drawing has a DWG, PDF, and a temporary scene JSON used by the viewer. Import notices are recorded in `compatibility.log`. Use **退出程序** when finished to close the local drawing service. Closing only the browser tab leaves the service running. The source Excel and DWG templates are never used as writable job files. Excel VBA macros are disabled in the app's private Excel instance. Close separately opened project copies before opening them in the app.
 
 ## Drawing and calculation components

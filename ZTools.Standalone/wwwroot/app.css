@@ -2,3 +2,4 @@
 #message{position:sticky;top:0;z-index:10;max-height:35vh;overflow:auto;overflow-wrap:anywhere}
 #calculationStatus[data-status=error]{color:#b13225;font-weight:600}
 #calculationStatus[data-status=success]{color:#187455}
+.completion-dialog{width:min(500px,93vw)}.creation-summary{padding:6px 24px 18px;white-space:pre-line;overflow-wrap:anywhere;line-height:1.8}

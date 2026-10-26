@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>凯乐提交文件工具</title><link rel="stylesheet" href="app.css"></head>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>凯乐提交文件工具</title><link rel="stylesheet" href="app.css?v=1.3"></head>
 <body>
 <header><img src="cfl-logo.jpg" alt="CFL 凯乐"><div><h1>凯乐提交文件工具</h1><p>项目输入 · 参数复核 · 提交出图</p></div><span class="platform">独立出图工作台</span><button id="refresh" class="quiet">刷新项目</button><button id="closeApp" class="quiet">退出程序</button></header>
 <div id="message" role="status" hidden></div>
@@ -20,5 +20,6 @@
 <aside class="devices"><div class="device-head"><h2>设备清单</h2><button class="quiet" id="selectAll">全选</button></div><p class="hint">勾选需要出图的设备，点选设备后可调整对应参数。</p><div id="rows"><div class="no-device">尚未打开项目</div></div><section class="selection"><h2>当前设备</h2><dl><dt>设备位号</dt><dd id="selectedTag">—</dd><dt>SEC 图块名称</dt><dd id="selectedTemplate">—</dd><dt>材料清单名称</dt><dd id="selectedList">—</dd></dl><p class="hint">材料清单匹配 Excel「List-all」第 2 行。</p><button class="wide" data-sheet="Sheet1">在 Excel 中复核计算结果</button></section></aside>
 </div>
 <dialog id="dialog"><form id="parameterForm"><div class="dialog-head"><img src="cfl-logo.jpg" alt="凯乐"><div><h2 id="dialogTitle"></h2><p id="dialogSubtitle">修改将保存到项目 Excel 工作簿</p></div><button type="button" class="close" id="cancelX" aria-label="关闭">×</button></div><div id="fields"></div><div id="formError" role="alert" hidden></div><footer><button type="button" id="cancel">取消</button><button class="primary" id="save" type="submit">保存到 Excel</button></footer></form></dialog>
+<dialog id="creationComplete" class="completion-dialog" aria-labelledby="creationCompleteTitle" aria-describedby="creationSummary"><div class="dialog-head"><img src="cfl-logo.jpg" alt="凯乐 CFL"><h2 id="creationCompleteTitle">图纸生成完成</h2></div><p id="creationSummary" class="creation-summary"></p><form method="dialog"><footer><button class="primary" autofocus>确定</button></footer></form></dialog>
 <div id="busy" hidden><span class="spinner"></span><strong id="busyText">正在处理</strong><span id="elapsed"></span><button id="cancelCalculation" hidden>取消计算</button></div>
-<script type="module" src="app.js"></script></body></html>
+<script type="module" src="app.js?v=1.3"></script></body></html>

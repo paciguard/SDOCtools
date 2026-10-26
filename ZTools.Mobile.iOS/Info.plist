@@ -3,7 +3,7 @@
 <plist version="1.0"><dict>
 <key>CFBundleDisplayName</key><string>凯乐提交工具</string>
 <key>CFBundleIdentifier</key><string>com.paciguard.sdoctools</string>
-<key>CFBundleVersion</key><string>3</string><key>CFBundleShortVersionString</key><string>1.2</string>
+<key>CFBundleVersion</key><string>4</string><key>CFBundleShortVersionString</key><string>1.3</string>
 <key>LSRequiresIPhoneOS</key><true/>
 <key>UIApplicationSceneManifest</key><dict><key>UIApplicationSupportsMultipleScenes</key><false/></dict>
 <key>UIDeviceFamily</key><array><integer>1</integer><integer>2</integer></array>

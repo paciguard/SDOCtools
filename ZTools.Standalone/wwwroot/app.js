@@ -67,7 +67,13 @@ $$('[data-parameters]').forEach(b=>b.addEventListener('click',()=>work('正在�
 $('#cancel').onclick=$('#cancelX').onclick=()=>dialog.close();
 $('#parameterForm').addEventListener('submit',async e=>{e.preventDefault();await work('正在保存参数',async()=>{try{if(parameterGroup==='print'){const options={};for(const input of $$('#fields input'))options[input.dataset.key]=Number(input.value);render(await action('print',{options}));}else{const changes=formFields.map((f,i)=>({sheet:f.sheet,address:f.address,value:$('#field'+i).value}));render(await action('save-parameters',{group:parameterGroup,row:selected,changes}));}dialog.close();}catch(error){$('#formError').hidden=false;$('#formError').textContent=error.message;}});});
 $('#printSettings').addEventListener('click',()=>{parameterGroup='print';$('#dialogTitle').textContent='出图与打印设置';$('#dialogSubtitle').textContent='A3 横向矢量 PDF · 参数保存在项目 Excel';$('#fields').replaceChildren();$('#formError').hidden=true;for(const [key,label] of Object.entries({minX:'窗口最小 X 坐标',minY:'窗口最小 Y 坐标',maxX:'窗口最大 X 坐标',maxY:'窗口最大 Y 坐标',margin:'页边距（毫米）',copies:'打印份数'})){const wrap=document.createElement('div');wrap.className='field';const caption=document.createElement('label');caption.textContent=label;const input=document.createElement('input');input.type='number';input.step=key==='copies'?'1':'0.1';input.dataset.key=key;input.value=state?.options?.[key]??({maxX:420,maxY:297,margin:5,copies:1}[key]||0);wrap.append(caption,input);$('#fields').append(wrap);}dialog.showModal();});
-$('#generate').addEventListener('click',()=>work('正在生成 DWG 与 PDF',async()=>{render(await action('generate',{kinds:$$('input[name="kind"]:checked').map(e=>e.value),rows:[...checked]}));const files=await json('/api/files');if(files.length)await showFile(files[0].id);}));
+$('#generate').addEventListener('click',async()=>{
+ let completed=null;
+ await work('正在生成 DWG 与 PDF',async()=>{completed=await action('generate',{kinds:$$('input[name="kind"]:checked').map(e=>e.value),rows:[...checked]});render(completed);const files=await json('/api/files');if(files.length)await showFile(files[0].id);});
+ // Show once for the completed batch, after busy controls have been released.
+ // A preview error must not hide the fact that drawing files were saved.
+ if(completed){$('#creationSummary').textContent='DWG 和 PDF 图纸已全部生成并保存。\n保存位置：'+completed.output+'\n可在图纸列表中预览或下载。';$('#creationComplete').showModal();}
+});
 $$('[data-template]').forEach(b=>b.addEventListener('click',()=>work('正在载入模板',async()=>{$$('[data-template]').forEach(x=>x.classList.toggle('active',x===b));currentFile=null;showDrawing(await json('/api/template/'+b.dataset.template));})));
 $('#fit').onclick=()=>fit();
 try{const initial=await json('/api/state');token=initial.token;render(initial.data);}catch(error){message('无法连接凯乐出图程序：'+error.message);}
