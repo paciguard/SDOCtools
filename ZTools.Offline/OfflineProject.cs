@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Collections.Concurrent;
 using System.Text.Json;
 using NPOI.SS.Util;
 using ZTools.Engine;
@@ -11,14 +12,16 @@ public sealed record ParameterForm(string Title,List<InputField> Fields);
 public sealed record InputChange(string Sheet,string Address,string Value);
 public sealed record ProjectEntry(string Id,string Name);
 public sealed record OutputEntry(int Id,string Name,string Kind);
+public sealed record OfflineState(string Job,bool NeedsCalculation,EquipmentRow[] Rows,SheetOptions Options,OutputEntry[] Files,string[] Log,bool Offline=true);
 
 // Native hosts call this directly: no listener, Excel process or remote service.
-public sealed class OfflineProject
+public sealed partial class OfflineProject
 {
-    readonly string storage;readonly List<string> log=new();string workbook,output;bool needsCalculation=true;
+    readonly string storage;readonly ConcurrentQueue<string> log=new();string workbook,output;bool needsCalculation=true;
     public OfflineProject(string storage){this.storage=Path.GetFullPath(storage);Directory.CreateDirectory(this.storage);System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);}
     public string Workbook=>workbook;
-    void Report(string message){log.Add(message);if(log.Count>100)log.RemoveAt(0);}
+    void Report(string message){log.Enqueue(message);while(log.Count>100)log.TryDequeue(out _);}
+    public object Progress()=>new{log=log.ToArray()};
     public ProjectEntry[] Projects()=>Directory.GetDirectories(storage).Where(d=>System.IO.File.Exists(Path.Combine(d,"ZTools.xls"))).OrderDescending().Select(d=>new ProjectEntry(Path.GetFileName(d),Path.GetFileName(d))).ToArray();
     public object Create()
     {
@@ -76,18 +79,15 @@ public sealed class OfflineProject
     WorkbookSession Book()=>new(workbook??throw new InvalidOperationException("请先新建或打开项目。"));
     public object State()
     {
-        var rows=new List<EquipmentRow>();SheetOptions options=new();
-        if(workbook!=null)using(var b=Book())
-        {
-            for(int i=0;i<30;i++)if(!string.IsNullOrWhiteSpace(b.Cell("input","N"+(21+i))))rows.Add(new(i,b.Cell("input","D"+(21+i)),b.Cell("input","N"+(21+i)),b.Cell("input","O"+(21+i)),b.Cell("Sheet1","CA"+(40+i)),b.Cell("Sheet1","CC"+(40+i))));
-            options=ReadOptions(b);
-        }
-        return new{job=workbook==null?null:Path.GetFileName(Path.GetDirectoryName(workbook)),needsCalculation,rows,options,files=Files(),log=log.ToArray(),offline=true};
+        if(workbook!=null){using var book=Book();return Snapshot(book);}
+        return new OfflineState(null,needsCalculation,Array.Empty<EquipmentRow>(),new(),Files(),log.ToArray());
     }
-    public object Calculate(bool utility=false)
+    OfflineState Snapshot(WorkbookSession b)
     {
-        using(var b=Book()){var engine=new SubmissionEngine(b,Report);if(utility)engine.CalculateUtility();else {engine.Calculate();needsCalculation=false;}}
-        return State();
+        var rows=new List<EquipmentRow>();SheetOptions options=new();
+        for(int i=0;i<30;i++)if(!string.IsNullOrWhiteSpace(b.Cell("input","N"+(21+i))))rows.Add(new(i,b.Cell("input","D"+(21+i)),b.Cell("input","N"+(21+i)),b.Cell("input","O"+(21+i)),b.Cell("Sheet1","CA"+(40+i)),b.Cell("Sheet1","CC"+(40+i))));
+        options=ReadOptions(b);
+        return new OfflineState(Path.GetFileName(Path.GetDirectoryName(workbook)),needsCalculation,rows.ToArray(),options,Files(),log.ToArray());
     }
     public ParameterForm Parameters(string group,int index)
     {

@@ -22,6 +22,7 @@ tests/standalone-*.png
 application.log
 application-error.log
 application-*.log
+**/.cfl-calculation-*/
 plot.log
 tests/section-host.*
 tests/*-output/

@@ -43,7 +43,7 @@ foreach($package in 'acadsharp/3.8.0','pdfsharp-gdi/6.2.4'){
     if(Test-Path -LiteralPath $packageRoot){foreach($license in Get-ChildItem $packageRoot -Recurse -File|Where-Object {$_.Name -match '^(LICENSE|LICENSE-MIT|License\.txt|LICENSE\.md)$'}){Copy-Item -LiteralPath $license.FullName -Destination (Join-Path $licenses (($package.Replace('/','-'))+'-'+$license.Name)) -Force}}
 }
 Copy-Item -LiteralPath (Join-Path $projectRoot 'ZTools.Standalone/wwwroot/vendor/THREE-LICENSE.txt') -Destination (Join-Path $licenses 'three-LICENSE.txt') -Force
-if(Test-Path -LiteralPath (Join-Path $projectRoot 'licenses')){Copy-Item -Path (Join-Path $projectRoot 'licenses/*') -Destination $licenses -Force}
+if(Test-Path -LiteralPath (Join-Path $projectRoot 'licenses')){Copy-Item -Path (Join-Path $projectRoot 'licenses/*') -Destination $licenses -Recurse -Force}
 Write-Host "Built standalone application: $destination\Start.ps1"
 # Start-Process checks its own exit code above; it does not reset LASTEXITCODE.
 # PowerShell CI wrappers use this value as the script's final process status.

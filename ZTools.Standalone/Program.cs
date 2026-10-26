@@ -4,6 +4,8 @@ using ACadSharp.IO;
 using ZTools.Engine;
 using ZTools.Standalone;
 
+if(args.Contains("--calculate-worker"))
+{Environment.ExitCode=await CalculationProcess.ExecuteWorker(args);return;}
 if(args.Contains("--verify-templates"))
 {
     Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(TemplateResources.Inventory,DrawingOutput.JsonOptions));
@@ -58,6 +60,7 @@ app.MapGet("/api/state",async()=>new{token,data=await sta.Run(()=>workspace.Stat
 // Progress contains only the thread-safe log. Never queue it behind Excel:
 // the browser must still receive updates while a COM operation is running.
 app.MapGet("/api/progress",()=>new{log=workspace.Log.ToArray()});
+app.MapPost("/api/action/cancel",()=>workspace.CancelCalculation());
 app.MapPost("/api/action/{command}",async(string command,ActionRequest request)=>await sta.Run(()=>command switch
 {
     "new"=>workspace.Create(request.Path),"open"=>workspace.Select(request.Path),

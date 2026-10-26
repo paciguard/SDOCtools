@@ -30,10 +30,11 @@ public sealed class MobileController:UIViewController,IWKScriptMessageHandler
     }
     public async void DidReceiveScriptMessage(WKUserContentController userContentController,WKScriptMessage message)
     {
-        if(message.FrameInfo.Request.Url?.Scheme!="cfl")return;int id=0;string reply;await gate.WaitAsync();
+        if(message.FrameInfo.Request.Url?.Scheme!="cfl")return;int id=0;string reply;bool entered=false;
         try
         {
             using var json=JsonDocument.Parse(message.Body.ToString());var root=json.RootElement;id=root.GetProperty("id").GetInt32();string command=root.GetProperty("command").GetString();var data=root.GetProperty("data");object result;
+            if(!MobileBridge.IsImmediate(command)){await gate.WaitAsync();entered=true;}
             if(command=="import")
             {
                 var url=await Pick(null);if(url==null)throw new InvalidOperationException("已取消导入。");bool scoped=url.StartAccessingSecurityScopedResource();
@@ -46,7 +47,7 @@ public sealed class MobileController:UIViewController,IWKScriptMessageHandler
             }
             else result=await Task.Run(()=>bridge.Dispatch(command,data));reply=MobileBridge.Reply(id,result);
         }
-        catch(Exception error){reply=MobileBridge.Failure(id,error);}finally{gate.Release();}
+        catch(Exception error){reply=MobileBridge.Failure(id,error);}finally{if(entered)gate.Release();}
         foreach(string script in MobileBridge.Scripts(id,reply))await web.EvaluateJavaScriptAsync(script);
     }
     Task<NSUrl> Pick(string file)

@@ -32,6 +32,18 @@ jobs:
       - name: Compile Excel editor regression tests
         shell: pwsh
         run: dotnet build tests/EditorLifecycleSmoke.csproj --configuration Release --disable-build-servers /p:UseSharedCompilation=false /nr:false /m:1
+      - name: Verify stalled calculation workers return control
+        shell: pwsh
+        run: |
+          dotnet build tests/CalculationProcessSmoke/CalculationProcessSmoke.csproj -c Release --disable-build-servers /p:UseSharedCompilation=false /nr:false /m:1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ./tests/CalculationProcessSmoke/bin/Release/net8.0-windows/CalculationProcessSmoke.exe
+      - name: Verify mobile calculation cancellation and completion
+        shell: pwsh
+        run: |
+          dotnet build tests/OfflineCalculationSmoke/OfflineCalculationSmoke.csproj -c Release --disable-build-servers /p:RestorePackagesPath="$pwd/.tools/nuget" /p:UseSharedCompilation=false /nr:false /m:1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ./tests/OfflineCalculationSmoke/bin/Release/net8.0/OfflineCalculationSmoke.exe
       - name: Verify offline mobile calculations and DWG/PDF output without Excel
         shell: pwsh
         run: |

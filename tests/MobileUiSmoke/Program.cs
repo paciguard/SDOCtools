@@ -7,5 +7,16 @@ app.MapGet("/",()=>Results.Content(File.ReadAllText(Path.Combine(root,"ZTools.Mo
 app.MapGet("/phone",()=>Results.Content("<!doctype html><html><head><meta charset='utf-8'><title>凯乐工具 · 手机界面检查</title></head><body style='margin:0;background:#e7edf2'><iframe title='手机应用界面' src='/' style='width:390px;height:844px;border:1px solid #c8d7e1;border-radius:12px;display:block;margin:14px auto;background:white'></iframe></body></html>","text/html"));
 app.MapGet("/{name}",(string name)=>name is "mobile.css" or "mobile.js"?Results.File(Path.Combine(root,"ZTools.Mobile.Shared/web",name),name.EndsWith("css")?"text/css":"text/javascript"):name=="cfl-logo.jpg"?Results.File(Path.Combine(root,"ZTools.Standalone/wwwroot/cfl-logo.jpg"),"image/jpeg"):Results.NotFound());
 app.MapGet("/vendor/{name}",(string name)=>name is "three.core.js" or "three.module.js"?Results.File(Path.Combine(root,"ZTools.Standalone/wwwroot/vendor",name),"text/javascript"):Results.NotFound());
-app.MapPost("/native",async(JsonElement request)=>{await gate.WaitAsync();int id=request.GetProperty("id").GetInt32();try{return Results.Content(MobileBridge.Reply(id,bridge.Dispatch(request.GetProperty("command").GetString(),request.GetProperty("data"))),"application/json");}catch(Exception e){return Results.Content(MobileBridge.Failure(id,e),"application/json");}finally{gate.Release();}});
+app.MapPost("/native",async(JsonElement request)=>
+{
+    int id=request.GetProperty("id").GetInt32();string command=request.GetProperty("command").GetString();bool entered=false;
+    try
+    {
+        if(!MobileBridge.IsImmediate(command)){await gate.WaitAsync();entered=true;}
+        var result=await Task.Run(()=>bridge.Dispatch(command,request.GetProperty("data")));
+        return Results.Content(MobileBridge.Reply(id,result),"application/json");
+    }
+    catch(Exception e){return Results.Content(MobileBridge.Failure(id,e),"application/json");}
+    finally{if(entered)gate.Release();}
+});
 app.Run();

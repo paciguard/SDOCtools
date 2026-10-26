@@ -46,4 +46,6 @@ for asset in inventory:
 print('PASS: published application embeds the three DWGs and Excel template; no external business templates are packaged.')
 for name in ['ACadSharp-LICENSE.txt','PDFsharp-LICENSE.txt','three-LICENSE.txt']:
     assert (package/'licenses'/name).is_file(), name
+assert (package/'ZTools.Calculation.dll').is_file()
+assert (package/'licenses/mobile/NPOI-LICENSE').is_file()
 print('PASS: packaged third-party notices and library licenses.')

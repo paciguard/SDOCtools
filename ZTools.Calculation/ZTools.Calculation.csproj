@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><TargetFramework>net8.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>disable</Nullable><NoWarn>$(NoWarn);CS0219</NoWarn></PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="NPOI" Version="2.7.5" />
+    <Compile Include="../ZTools.Offline/ExcelWorkbook.cs;../ZTools.Offline/WorkbookSession.cs;../ZTools.Standalone/Core/Vb.cs;../ZTools.Standalone/Core/SubmissionEngine.cs;../ZTools.Standalone/Core/SectionSelection.cs;../ZTools.Standalone/Core/Generated/WorkbookCalculations.cs" Link="Shared/%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

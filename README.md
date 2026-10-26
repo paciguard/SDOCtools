@@ -4,6 +4,8 @@ The active application is C#/.NET 8 with a Chinese interface, the supplied CFL l
 
 Native Android and iPhone projects also share a portable offline engine that reads/writes the original XLS workbook without Excel. Android APK and the iPhone Mac build kit are prepared under `dist/CFL-Mobile`. See [MOBILE-INSTALL.md](MOBILE-INSTALL.md) for installation, Mac signing and validation limits. The phone projects are separate from the Windows application.
 
+Mobile version 1.1 (build 2) enables **生成 DWG＋PDF** after a successful completed calculation and adds live progress and cooperative cancellation on both phone platforms. The Android installer and iPhone Mac build kit are refreshed together; the build kit is not a signed IPA.
+
 ## Build and run
 
 Requires Windows x64, Microsoft Excel desktop, a WebGL-capable browser, and the .NET 8 ASP.NET Core and Windows Desktop runtimes. Building requires the .NET 8 SDK; the SDK supplies those runtimes on the development computer.
@@ -31,7 +33,7 @@ Results are stored in `<project>/Output-Standalone/<timestamp>/GA|PID|SEC`. Each
 - **C# calculation engine** retains the migrated workbook and GA/PID/SEC drawing methods.
 - **Three.js 0.180.0** displays the generated geometry and attribute text through WebGL.
 - **PDFsharp-GDI 6.2.4** writes monochrome vector A3 PDFs. Chinese text uses a suitable locally installed TrueType font; no Windows font files are redistributed.
-- **Excel automation** reads and updates the existing workbook and its embedded database; there is no replacement business database.
+- **Managed calculation** reads/writes the original XLS and its embedded database without starting Excel. Excel automation remains available for Windows editing, parameter dialogs and drawing generation; there is no replacement business database.
 
 The build embeds the original `Referrings/Ztools/TEMPLATE/GA.dwg`, `PID.dwg`, `SEC.dwg`, and `Referrings/Ztools/ZTools.xls` byte for byte. DWGs are read directly from assembly resource streams, without extracting them to disk. Excel is extracted only as an editable project workbook, preserving all sheets, VBA content and the embedded database; macros remain disabled during app automation. Existing project workbooks are never replaced by the built-in template. Updating a built-in template requires rebuilding the application. Preserve original block names, attributes, and layers. The app is a template-driven drawing tool; it does not provide a general AutoCAD editor. It preserves CAD content supported by the DWG library. Non-graphical legacy object warnings are logged; unsupported visible PDF entity types stop export instead of silently disappearing. Visual fidelity for new templates or untested block combinations must be checked before issuing drawings.
 
@@ -45,7 +47,9 @@ The calculations address the worksheet **Sheet1 by name**, including when sheets
 
 Known source-data gap: the `ZAG(LK6)_QWL` list references part `411.20`, absent from the supplied `List-detail` sheet. That variant stops with an explicit error until the database is completed by its owner.
 
-Calculation progress is displayed while Excel opens, queries each pump, and saves the results. A missing pump/baseplate record reports the selected database, model, baseplate and input row before Excel's generic VLOOKUP error can hide the cause. For example, `ZE80-2200 / 160L` with standard `7版` requires that exact record in `ZE7`; an existing record in `ZE` does not satisfy it. Confirm the intended edition and supply the correct database record rather than changing editions merely to bypass an error. See [the calculation investigation](migration/calculation-response-20261026.md).
+Calculation uses the portable XLS engine without starting Excel. Progress is displayed while it reads the workbook, queries each pump, and saves the results. The same engine serves Android and iPhone. Database ranges are read once per calculation and formulas are evaluated once per read. A six-pump Windows check returned in 1.7 seconds, versus about 20 seconds previously; these are local PC measurements, not phone timing guarantees. After the completed result returns to the workbench, **生成 DWG ＋ PDF** becomes enabled. **取消计算** stops a running calculation without changing the project workbook. A calculation with no progress for 60 seconds, or over three minutes in total, stops automatically and returns to the workbench. Calculation uses a private workbook copy and a separate hidden process; it updates the project only after successful save/close and refuses to overwrite a project changed elsewhere during calculation. Excel editing and Windows drawing generation remain available as before.
+
+A missing pump/baseplate record reports the selected database, model, baseplate and input row before Excel's generic VLOOKUP error can hide the cause. For example, `ZE80-2200 / 160L` with standard `7版` requires that exact record in `ZE7`; an existing record in `ZE` does not satisfy it. Confirm the intended edition and supply the correct database record rather than changing editions merely to bypass an error. See [the calculation investigation](migration/calculation-response-20261026.md).
 
 ## Project layout and checks
 
@@ -57,7 +61,8 @@ Calculation progress is displayed while Excel opens, queries each pump, and save
 - `tools/verify_sources.py`: verifies original-reference hashes against the selected snapshot. Current source snapshot: `migration/source-manifest-20261023-embedded.json`, adopting the owner's current Excel template for embedding; earlier snapshots remain historical records.
 - `tools/verify_project.py`: checks standalone wiring and the published reference files.
 - `tests/standalone-api.ps1`: exercises Excel-backed forms, parameter and print-setting persistence, calculation, and two complete GA/PID/SEC output sets through the app.
-- `tests/calculation-response.ps1`: requires desktop Excel; checks a missing ZE7 record on a private workbook copy, responsive progress, unchanged saved inputs/output formulas, and successful six-row calculation afterward. Pass `-Workbook <path>` to reproduce a supplied project without editing it.
+- `tests/calculation-response.ps1`: requires desktop Excel; checks a missing ZE7 record on a private workbook copy, responsive progress, real calculation cancellation with byte-identical original data, and successful six-row calculation afterward. Pass `-Workbook <path>` to reproduce a supplied project without editing it.
+- `tests/CalculationProcessSmoke`: checks deliberately stalled workers, idle/total timeouts, cancellation, unexpected exit, concurrent project edits and atomic result publication without requiring Excel.
 - `tests/startup.ps1`: checks detached executable launch, repeat launches, safe rebuild preparation, the Visual Studio address, and startup error reporting without opening Excel.
 - `tests/embedded-templates.ps1`: runs a package outside the checkout with no external templates, verifies all four embedded hashes, reads/writes the three DWGs, and checks byte-identical Excel project extraction without requiring Office.
 - `tests/EditorLifecycleSmoke.csproj`: requires desktop Excel; checks save-and-return, saved/closed workbook recovery, disconnected Excel, save-error retry, and preservation of another open workbook, using private workbook copies.

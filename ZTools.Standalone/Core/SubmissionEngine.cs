@@ -13,6 +13,7 @@ namespace ZTools.Engine
         internal dynamic Book => workbook.Book;
         internal dynamic Drawing { get; set; }
         private readonly Action<string> report;
+        private readonly Dictionary<string,object[,]> pumpDatabaseRows = new Dictionary<string,object[,]>();
         public SubmissionEngine(WorkbookSession workbook, Action<string> report)
         { this.workbook = workbook; this.report = report ?? (_ => { }); }
         private void Notify(object message) { report(Vb.Text(message)); }
@@ -33,6 +34,10 @@ namespace ZTools.Engine
 
         public int Calculate()
         {
+            // Database tables are read-only during a calculation. Share each
+            // range read between preflight and the per-pump drawing lookups.
+            // Clear on every run so edits made between calculations take effect.
+            pumpDatabaseRows.Clear();
             int count = workbook.ValidateInput();
             // Preserve formulas, formatting, database sheets, and all user inputs.
             // Roll back output values/formulas if any source lookup fails.
@@ -51,6 +56,7 @@ namespace ZTools.Engine
                 ExcelApp.StatusBar = "凯乐工具：正在计算 " + count + " 台泵的数据";
                 report("正在查询泵的尺寸和重量数据……");
                 TransferData();
+                report("正在重新计算工作簿公式……");
                 Book.Application.CalculateFull();
                 // Validate the list and finalize the material-dependent SEC block
                 // now, so Sheet1 contains exactly the values later used by CAD.
@@ -72,7 +78,7 @@ namespace ZTools.Engine
                 report("正在校验冲洗方案并保存项目 Excel……");
                 PreparePid(count);
                 workbook.Save();
-                report("已使用工作簿内置数据库完成 " + count + " 台泵的数据计算。");
+                report("已校验 " + count + " 台泵的数据，正在完成结果保存……");
                 return count;
             }
             catch
@@ -233,7 +239,12 @@ namespace ZTools.Engine
             int k = Vb.Int(pumpIndex);
             string baseplate = Get("input",21+k,21);
             if (Get("input",21+k,22) != "380V") baseplate += "(6KV)";
-            var data = (object[,])Book.Worksheets[sheet].Range["A32:F2000"].Value2;
+            object[,] data;
+            if (!pumpDatabaseRows.TryGetValue(sheet,out data))
+            {
+                data = (object[,])Book.Worksheets[sheet].Range["A32:F2000"].Value2;
+                pumpDatabaseRows.Add(sheet,data);
+            }
             int found = -1;
             for (int r = 1; r <= data.GetLength(0); r++)
                 if (Vb.Text(data[r,1]) == model && Vb.Text(data[r,6]) == baseplate)

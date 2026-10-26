@@ -8,6 +8,7 @@
     <NoWarn>$(NoWarn);CS0219;CA1416;NETSDK1138</NoWarn>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="../ZTools.Calculation/ZTools.Calculation.csproj" Aliases="PortableCalculation" />
     <PackageReference Include="ACadSharp" Version="3.8.0" />
     <PackageReference Include="PDFsharp-GDI" Version="6.2.4" />
     <Content Update="wwwroot\**\*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />

@@ -1,21 +1,33 @@
-# Calculation response investigation — 2026-10-26
+# Calculation speed and completion — 2026-10-26
 
-The supplied project selects `7版` for its first pump, `ZE80-2200 / 160L` on input row 21. Its ZE7 worksheet contains no ZE80-2200 record. The ZE worksheet does contain that model, but substituting it would violate the seventh-edition database requirement. The saved Sheet1 output still contains earlier ZE8 names; those are stale outputs and must not be treated as a successful calculation of the current inputs.
+The supplied project `Test2026102601/ZTools.xls` selects `7版` for `ZE80-2200 / 160L` at input row 21. Its ZE7 worksheet lacks that model. The screenshot shows HTTP 400 after 8.7 seconds, rather than a successful calculation. ZE contains the model but must not substitute for ZE7. The project and original database were not modified to bypass this error.
 
-The published Windows application reproduced a generic Excel VLOOKUP exception at the first weight lookup. The calculation request returned in about eight seconds and subsequent state requests succeeded. An indefinite hang was not reproduced. Opening the workbook twice while selecting it took about eleven seconds. The old UI showed an elapsed timer and disabled controls while awaiting the whole operation, without showing the Excel calculation stage.
+## Faster calculation
 
-The generated rules now check for the exact pump/baseplate record before the first VLOOKUP. Missing and duplicate matches report the database, model, baseplate and input row. The generator contains the same change so regeneration preserves it. ZE7 never falls back to ZE. A failed project calculation keeps drawing generation blocked, restores calculated ranges, logs its failure and returns an error to the workbench.
+Windows previously started Excel for calculation, waited for COM cleanup and reopened Excel to refresh the UI. A valid six-row calculation took about twenty seconds locally. Windows now uses `ZTools.Calculation`, a small NPOI-based library linking exactly the offline phone workbook adapter and migrated business rules. It does not include the phone PDF renderer or replace any business database. The calculation starts no Excel process. Windows Excel editing, parameter forms and DWG/PDF generation remain available.
 
-The Windows UI polls a read-only progress endpoint backed by the existing concurrent log. This endpoint does not enter the Excel STA queue, so progress remains available while Excel is opening or calculating. It reports opening, per-pump lookups, validation/save and result loading. This does not add a timeout or cancellation for a genuinely blocked Excel COM call.
+Both Windows and mobile avoid evaluating each formula twice. Pump database ranges are read once per calculation, shared between validation and per-pump lookups, then discarded before the next calculation so later database edits are respected. Missing/ambiguous records remain errors. Sheet1 SEC results, exact List-all matching and ZE7 main/auxiliary drawing rules remain intact.
 
-Validation on a private copy of the supplied project returned HTTP 400 in 6.4 seconds with `ZE7`, `ZE80-2200`, `160L` and input row 21 in the Chinese error. Thirty concurrent progress requests remained responsive. Saved input/output formulas matched before and after the failed calculation. Excel changes an OLE directory timestamp when opening an XLS, so unchanged project data is checked separately from file-container metadata. The original supplied workbook's SHA-256 remained unchanged. The same server then calculated the six valid built-in input rows successfully in about twenty seconds.
+Measured locally: six-row managed Windows calculation including child-process startup, private-copy save and UI-state return took 1.7 seconds; the offline phone engine took about 0.7 seconds for six rows and 0.5 seconds for a warm 30-row run. These are development-PC timings, not physical phone benchmarks. Independent Excel COM calculation matched 546 checked cells on each managed engine, including mixed ZE/ZE7/ZA dimensions, weights and SEC names. Saved custom print settings survived calculation.
 
-The offline regression also exercised mixed ZE/ZE7/ZA editions, dimensions, weights, SEC material names, GA main/auxiliary block selections, DWG/PDF generation and rejection of missing ZE7 models. All sixteen original reference files retain their recorded hashes. The Windows package was rebuilt under `dist/CFL-SubmitTools`; existing mobile installation packages were not rebuilt for this Windows diagnostic update.
+## Safe completion and UI
 
-Reproduce the Windows request/rollback/progress check with:
+Windows uses a bounded hidden child on a private workbook copy. It returns rows/options directly after saving and closing the copy. The parent checks the original SHA-256 and atomically publishes only a successful result, rejecting concurrent edits. Cancellation, 60 seconds without progress, or three minutes total stop only the private calculation process. No process-wide GC/finalizer wait is used for workbook disposal.
+
+Android/iPhone calculate in a background task on a private workbook copy. Progress/cancel commands bypass the native command gate. Cooperative cancellation is checked during workbook operations; automatic cancellation after 60 idle seconds or three total minutes is observed at these checkpoints. Failures and cancellations preserve the original XLS bytes and keep generation disabled.
+
+On success, both interfaces clear busy state and enable **生成 DWG＋PDF**. Failure messages stay visible, including beside the Windows calculation button; the main Windows message remains visible when scrolled. A missing ZE7 record therefore returns a specific Chinese error instead of appearing to calculate indefinitely. It does not enable generation from stale output.
+
+## Checks and delivery
+
+Worker smoke checks cover idle/total stalls, cancellation, errors, missing response, concurrent edits and successful publication. Offline smoke checks cover cancellation, byte-identical rollback, missing ZE7 rejection, six/30-row completion and DWG/PDF output. Independent Excel parity, original-reference hashes and VBA/OLE-stream preservation are checked separately. UI checks exercise success and failure, including Generate-button state.
+
+Windows is published under `dist/CFL-SubmitTools`. Mobile version 1.2/build 3 is rebuilt under `dist/CFL-Mobile/Android`; the iPhone ZIP is a refreshed Mac build/signing kit, not an installable IPA. Native iPhone linking/signing and physical-device checks require the owner's Mac/phones. No signed IPA or physical phone benchmark is claimed.
+
+Reproduce the Windows request/rollback/progress check on private copies with:
 
 ```powershell
 pwsh -NoProfile -File tests/calculation-response.ps1 -Workbook '<project workbook path>'
 ```
 
-Without `-Workbook`, the test uses a private copy of the original template and selects `7版` on its first row to exercise the same missing-record case. It starts its own server, keeps all test outputs under the ignored `tests/calculation-output` directory, and verifies successful calculation of a separate valid project after the failure.
+Without `-Workbook`, it copies the reference workbook and selects `7版` at row 21 to exercise the same missing-record case, then calculates a separate valid project. All test artifacts stay in ignored output folders.

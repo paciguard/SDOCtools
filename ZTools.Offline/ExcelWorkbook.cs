@@ -13,6 +13,7 @@ public sealed class ExcelBook : IDisposable
     internal readonly HSSFWorkbook Data;
     internal readonly IFormulaEvaluator Evaluator;
     internal readonly DataFormatter Formatter=new(CultureInfo.InvariantCulture);
+    internal CancellationToken Cancellation{get;set;}
     public ExcelSheets Worksheets {get;}
     public ExcelApplication Application {get;}
     public ExcelBook(Stream stream)
@@ -23,19 +24,21 @@ public sealed class ExcelBook : IDisposable
     }
     internal object Value(ICell cell)
     {
+        Cancellation.ThrowIfCancellationRequested();
         if(cell==null)return null;
         if(cell.CellType==CellType.Formula)
         {
-            CellValue value;
-            try{value=Evaluator.Evaluate(cell);Evaluator.EvaluateFormulaCell(cell);}catch(Exception e){throw new InvalidOperationException($"无法计算 {cell.Sheet.SheetName}!{cell.Address}：{cell.CellFormula}",e);}
-            return value.CellType switch {CellType.Numeric=>value.NumberValue,CellType.String=>value.StringValue,CellType.Boolean=>value.BooleanValue,CellType.Blank=>null,_=>throw new InvalidOperationException($"公式错误：{cell.Sheet.SheetName}!{cell.Address}（{value.FormatAsString()}）")};
+            CellType result;
+            // Evaluate once and retain the cached BIFF result for Excel readers.
+            try{result=Evaluator.EvaluateFormulaCell(cell);}catch(OperationCanceledException){throw;}catch(Exception e){throw new InvalidOperationException($"无法计算 {cell.Sheet.SheetName}!{cell.Address}：{cell.CellFormula}",e);}
+            return result switch {CellType.Numeric=>cell.NumericCellValue,CellType.String=>cell.StringCellValue,CellType.Boolean=>cell.BooleanCellValue,CellType.Blank=>null,_=>throw new InvalidOperationException($"公式错误：{cell.Sheet.SheetName}!{cell.Address}（{cell.ErrorCellValue}）")};
         }
         return cell.CellType switch {CellType.Numeric=>cell.NumericCellValue,CellType.String=>cell.StringCellValue,CellType.Boolean=>cell.BooleanCellValue,CellType.Error=>throw new InvalidOperationException($"单元格错误：{cell.Sheet.SheetName}!{cell.Address}"),_=>null};
     }
     public void Save(string path)
     {
         string pending=path+".saving";
-        try{using(var output=new FileStream(pending,FileMode.Create,FileAccess.Write))Data.Write(output,true);File.Move(pending,path,true);}
+        try{Cancellation.ThrowIfCancellationRequested();using(var output=new FileStream(pending,FileMode.Create,FileAccess.Write))Data.Write(output,true);Cancellation.ThrowIfCancellationRequested();File.Move(pending,path,true);}
         finally{if(File.Exists(pending))File.Delete(pending);}
     }
     public void Dispose()=>Data.Close();
@@ -76,6 +79,7 @@ public sealed class ExcelRange : IEnumerable<ExcelRange>
     internal ICell Cell(int row,int col,bool create=false){var r=Sheet.Data.GetRow(row-1);if(r==null&&create)r=Sheet.Data.CreateRow(row-1);return create?r.GetCell(col-1)??r.CreateCell(col-1):r?.GetCell(col-1);}
     object Read(bool formula)
     {
+        Sheet.Book.Cancellation.ThrowIfCancellationRequested();
         object One(int r,int c){var cell=Cell(r,c);return formula&&cell?.CellType==CellType.Formula?"="+cell.CellFormula:Sheet.Book.Value(cell);}
         if(Row==LastRow&&Column==LastColumn)return One(Row,Column);
         var values=Array.CreateInstance(typeof(object),new[]{LastRow-Row+1,LastColumn-Column+1},new[]{1,1});
@@ -86,6 +90,7 @@ public sealed class ExcelRange : IEnumerable<ExcelRange>
     {
         for(int r=Row;r<=LastRow;r++)for(int c=Column;c<=LastColumn;c++)
         {
+            Sheet.Book.Cancellation.ThrowIfCancellationRequested();
             object v=value is Array a?a.GetValue(r-Row+a.GetLowerBound(0),c-Column+a.GetLowerBound(1)):value;
             var cell=Cell(r,c,true);cell.SetCellType(CellType.Blank);
             if(formula&&v is string f&&f.StartsWith('='))cell.SetCellFormula(f[1..]);

@@ -2,7 +2,7 @@
   <PropertyGroup>
     <TargetFramework>net9.0-android35.0</TargetFramework><OutputType>Exe</OutputType>
     <SupportedOSPlatformVersion>26.0</SupportedOSPlatformVersion>
-    <ApplicationId>com.paciguard.sdoctools</ApplicationId><ApplicationVersion>1</ApplicationVersion><ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+    <ApplicationId>com.paciguard.sdoctools</ApplicationId><ApplicationVersion>3</ApplicationVersion><ApplicationDisplayVersion>1.2</ApplicationDisplayVersion>
     <ApplicationTitle>凯乐提交工具</ApplicationTitle><ImplicitUsings>enable</ImplicitUsings><Nullable>disable</Nullable>
     <AndroidPackageFormats>apk</AndroidPackageFormats><RuntimeIdentifiers>android-arm64;android-x64</RuntimeIdentifiers>
     <PublishTrimmed>false</PublishTrimmed><AndroidLinkMode>None</AndroidLinkMode><RunAOTCompilation>false</RunAOTCompilation>

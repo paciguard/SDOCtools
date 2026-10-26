@@ -6,11 +6,13 @@ public sealed class MobileBridge
 {
     public OfflineProject Project{get;}
     public MobileBridge(string folder)=>Project=new(folder);
+    public static bool IsImmediate(string command)=>command is "progress" or "cancel";
     public object Dispatch(string command,JsonElement data)
     {
         string Text(string key)=>data.GetProperty(key).GetString();int Number(string key)=>data.GetProperty(key).GetInt32();
         return command switch
         {
+            "progress"=>Project.Progress(),"cancel"=>Project.CancelCalculation(),
             "state"=>Project.State(),"new"=>Project.Create(),"projects"=>Project.Projects(),"open"=>Project.Open(Text("id")),
             "add"=>Project.AddEquipment(),"remove"=>Project.RemoveEquipment(Number("row")),
             "parameters"=>Project.Parameters(Text("group"),Number("row")),

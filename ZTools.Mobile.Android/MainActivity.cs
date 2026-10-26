@@ -21,10 +21,11 @@ public sealed class MainActivity:Activity
     }
     async void Receive(string request)
     {
-        int id=0;string reply;await gate.WaitAsync();
+        int id=0;string reply;bool entered=false;
         try
         {
             using var json=JsonDocument.Parse(request);var root=json.RootElement;id=root.GetProperty("id").GetInt32();string command=root.GetProperty("command").GetString();var data=root.GetProperty("data");
+            if(!MobileBridge.IsImmediate(command)){await gate.WaitAsync();entered=true;}
             object result;
             if(command=="import")
             {
@@ -42,7 +43,7 @@ public sealed class MainActivity:Activity
             reply=MobileBridge.Reply(id,result);
         }
         catch(Exception error){reply=MobileBridge.Failure(id,error);}
-        finally{gate.Release();}
+        finally{if(entered)gate.Release();}
         RunOnUiThread(()=>{foreach(string script in MobileBridge.Scripts(id,reply))view.EvaluateJavascript(script,null);});
     }
     Task<global::Android.Net.Uri> Pick(bool export,string name)

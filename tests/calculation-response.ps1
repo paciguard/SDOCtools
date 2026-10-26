@@ -26,7 +26,7 @@ function Read-Data([string]$Path){
     $excel=New-Object -ComObject Excel.Application
     $excel.AutomationSecurity=3;$excel.EnableEvents=$false;$excel.DisplayAlerts=$false
     try{
-        $book=$excel.Workbooks.Open($Path,0,$true,5,'123','123')
+        $book=$excel.Workbooks.Open($Path,0,$true,5)
         $snapshot=@()
         foreach($area in @(@('input','D21:AD50'),@('Sheet1','B40:CN69'),@('Sheet1','C15'),@('Sheet1','DB72:DE123'),@('Sec-List','F10:F39'))){
             $snapshot+=@{sheet=$area[0];range=$area[1];data=@($book.Worksheets.Item($area[0]).Range($area[1]).Formula)}
@@ -74,9 +74,27 @@ try {
     $valid=Join-Path $validFolder 'ZTools.xls'
     Copy-Item -LiteralPath (Join-Path $root 'Referrings/Ztools/ZTools.xls') -Destination $valid
     $null=Action 'open' @{path=$valid}
-    $result=Action 'calculate' @{}
+    $validHash=(Get-FileHash -LiteralPath $valid).Hash
+    $pending=Begin-Action 'calculate' @{}
+    $wait=[Diagnostics.Stopwatch]::StartNew()
+    while(-not $pending.IsCompleted -and $wait.Elapsed.TotalSeconds -lt 20){
+        $progress=Get-Json '/api/progress'
+        if($progress.log[-1] -match '正在查询'){break}
+        Start-Sleep -Milliseconds 100
+    }
+    if($pending.IsCompleted){throw 'Calculation finished before the cancellation test could run.'}
+    $cancelTimer=[Diagnostics.Stopwatch]::StartNew()
+    $null=Action 'cancel' @{}
+    $cancelled=$pending.GetAwaiter().GetResult()
+    $cancelError=$cancelled.Content.ReadAsStringAsync().GetAwaiter().GetResult()|ConvertFrom-Json
+    if($cancelled.IsSuccessStatusCode -or $cancelError.error -notmatch '已取消计算' -or $cancelTimer.Elapsed.TotalSeconds -gt 8){throw 'Cancel did not release the calculation request promptly.'}
+    if((Get-FileHash -LiteralPath $valid).Hash -ne $validHash){throw 'Cancellation modified the original project workbook.'}
+    $state=Get-Json '/api/state'
+    if(-not $state.data.needsCalculation){throw 'Cancelled calculation enabled drawing generation.'}
+    Write-Output ('PASS cancellation returns to the workbench in '+$cancelTimer.Elapsed.TotalSeconds.ToString('N1')+'s; original workbook is byte-identical')
+    $timer.Restart();$result=Action 'calculate' @{}
     if($result.needsCalculation -or $result.rows.Count -ne 6){throw 'Valid project calculation did not recover.'}
-    Write-Output 'PASS same STA queue calculates six valid rows after the failed project'
+    Write-Output ('PASS six valid rows return ready-for-generation state after error/cancellation in '+$timer.Elapsed.TotalSeconds.ToString('N1')+'s')
     $null=Action 'close' @{}
 } finally {
     $client.Dispose()

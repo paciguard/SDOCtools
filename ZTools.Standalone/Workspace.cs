@@ -22,6 +22,7 @@ public sealed class Workspace:IDisposable
     string workbookPath,editorSheet,notice;WorkbookSession editor;object cachedRows=Array.Empty<object>();SheetOptions currentOptions=new();bool needsCalculation=true,reloadAfterEditorClosed;
     public ConcurrentQueue<string> Log {get;}=new();
     public string LastOutput {get;private set;}
+    CancellationTokenSource calculationCancellation;
     public void Report(string text) {Log.Enqueue(text);while(Log.Count>120)Log.TryDequeue(out _);}
     public void EnsureIdle() {RecoverClosedEditor();if(editor!=null)throw new InvalidOperationException("请先完成 Excel 编辑，并单击“保存并返回”。");}
     void RecoverClosedEditor()
@@ -43,11 +44,7 @@ public sealed class Workspace:IDisposable
         if(workbookPath!=null&&editor==null&&refresh)
         {
             using var book=Open();
-            var input=(object[,])book.Book.Worksheets["input"].Range["D21:AD50"].Value2;
-            var results=(object[,])book.Book.Worksheets["Sheet1"].Range["CA40:CF69"].Value2;
-            var rows=new List<object>();
-            for(int k=0;k<30;k++)if(!string.IsNullOrWhiteSpace(Vb.Text(input[k+1,11])))rows.Add(new {index=k,tag=Vb.Text(input[k+1,1]),model=Vb.Text(input[k+1,11]),material=Vb.Text(input[k+1,12]),template=Vb.Text(results[k+1,1]),list=Vb.Text(results[k+1,3])});
-            cachedRows=rows;options=currentOptions=ReadOptions(book);reloadAfterEditorClosed=false;
+            cachedRows=ReadRows(book);options=currentOptions=ReadOptions(book);reloadAfterEditorClosed=false;
         }
         return new {job=workbookPath,editing=editor!=null,needsCalculation,notice,rows=cachedRows,options,output=LastOutput,log=Log.ToArray(),templates=new[]{"GA","PID","SEC"}.Select(k=>new{kind=k,path="内置 "+k+".dwg",exists=TemplateResources.Contains(k+".dwg"),format=".DWG",source="embedded"})};
     }
@@ -91,14 +88,33 @@ public sealed class Workspace:IDisposable
     }
     public object Calculate(bool utility=false)
     {
+        EnsureIdle();if(workbookPath==null)throw new InvalidOperationException("请先新建或打开项目。");
         if(!utility)needsCalculation=true;
-        Report("正在打开项目 Excel，准备计算……");
+        using var cancellation=new CancellationTokenSource();
+        Volatile.Write(ref calculationCancellation,cancellation);
+        Report("正在准备计算副本……");
         try
         {
-            using(var book=Open()){var engine=new SubmissionEngine(book,Report);if(utility)engine.CalculateUtility();else{engine.Calculate();needsCalculation=false;notice=null;}}
-            Report("正在读取计算结果，返回工作台……");return State(true);
+            var result=new CalculationProcess().Run(workbookPath,utility,Report,cancellation.Token);
+            cachedRows=result.Rows;currentOptions=result.Options;reloadAfterEditorClosed=false;
+            if(!utility){needsCalculation=false;notice=null;}
+            Report("计算结果已保存，已返回工作台。");return State();
         }
         catch(Exception error){Report("计算未完成："+error.Message);throw;}
+        finally{Volatile.Write(ref calculationCancellation,null);}
+    }
+    public object CancelCalculation()
+    {
+        try{Volatile.Read(ref calculationCancellation)?.Cancel();}catch(ObjectDisposedException){}
+        return new{cancelled=true};
+    }
+    internal static object ReadRows(WorkbookSession book)
+    {
+        var input=(object[,])book.Book.Worksheets["input"].Range["D21:AD50"].Value2;
+        var results=(object[,])book.Book.Worksheets["Sheet1"].Range["CA40:CF69"].Value2;
+        var rows=new List<object>();
+        for(int k=0;k<30;k++)if(!string.IsNullOrWhiteSpace(Vb.Text(input[k+1,11])))rows.Add(new {index=k,tag=Vb.Text(input[k+1,1]),model=Vb.Text(input[k+1,11]),material=Vb.Text(input[k+1,12]),template=Vb.Text(results[k+1,1]),list=Vb.Text(results[k+1,3])});
+        return rows;
     }
     public object Refresh(){EnsureIdle();needsCalculation=true;return State(true);}
     public ParameterForm Parameters(string group,int index)

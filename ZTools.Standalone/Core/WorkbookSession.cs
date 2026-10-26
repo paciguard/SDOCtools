@@ -28,6 +28,7 @@ namespace ZTools.Engine
                 Application.DisplayAlerts = false;
                 Application.AskToUpdateLinks = false;
                 Application.Visible = visible;
+                if (!visible) Application.IgnoreRemoteRequests = true;
                 Book = Application.Workbooks.Open(FilePath, UpdateLinks: 0, ReadOnly: false, Password: "123", WriteResPassword: "123", IgnoreReadOnlyRecommended: true);
                 if ((bool)Book.ReadOnly) throw new IOException("项目工作簿已被打开或锁定，请先关闭后再操作。");
                 foreach (string name in RequiredSheets) { dynamic sheet = Book.Worksheets[name]; Release((object)sheet); }
@@ -108,8 +109,8 @@ namespace ZTools.Engine
             }
             catch (Exception error) when (error is COMException || error is InvalidComObjectException) { System.Diagnostics.Trace.TraceWarning(error.ToString()); }
             finally { Release(application); }
-            // The session owns this private Excel instance only.
-            GC.Collect(); GC.WaitForPendingFinalizers();
+            // Do not wait for all process-wide COM finalizers on this STA.
+            // Book/Application are explicitly closed and released above.
         }
         private static void Release(object value)
         {
