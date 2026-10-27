@@ -22,22 +22,29 @@ public sealed partial class OfflineProject
     public string Workbook=>workbook;
     void Report(string message){log.Enqueue(message);while(log.Count>100)log.TryDequeue(out _);}
     public object Progress()=>new{log=log.ToArray()};
-    public ProjectEntry[] Projects()=>Directory.GetDirectories(storage).Where(d=>System.IO.File.Exists(Path.Combine(d,"ZTools.xls"))).OrderDescending().Select(d=>new ProjectEntry(Path.GetFileName(d),Path.GetFileName(d))).ToArray();
+    static string ProjectFile(string folder)=>System.IO.File.Exists(Path.Combine(folder,"ZTools.xlsx"))?Path.Combine(folder,"ZTools.xlsx"):Path.Combine(folder,"ZTools.xls");
+    public ProjectEntry[] Projects()=>Directory.GetDirectories(storage).Where(d=>System.IO.File.Exists(ProjectFile(d))).OrderDescending().Select(d=>new ProjectEntry(Path.GetFileName(d),Path.GetFileName(d))).ToArray();
     public object Create()
     {
         string dir=Path.Combine(storage,"项目-"+DateTime.Now.ToString("yyyyMMdd-HHmmss")+"-"+Guid.NewGuid().ToString("N")[..6]);Directory.CreateDirectory(dir);
-        workbook=Path.Combine(dir,"ZTools.xls");ProjectWorkbook.Create(workbook);
+        workbook=Path.Combine(dir,"ZTools.xlsx");ProjectWorkbook.Create(workbook);
         Reset();Report("项目已从内置 Excel 模板创建。");return State();
     }
     public object Open(string id)
     {
         if(!Projects().Any(p=>p.Id==id))throw new ArgumentException("项目不存在。");
-        workbook=Path.Combine(storage,id,"ZTools.xls");Reset();return State();
+        workbook=ProjectFile(Path.Combine(storage,id));
+        if(Path.GetExtension(workbook).Equals(".xls",StringComparison.OrdinalIgnoreCase))
+        {
+            using var input=System.IO.File.OpenRead(workbook);using var source=NPOI.SS.UserModel.WorkbookFactory.Create(input);using var model=ProjectWorkbook.Materialize(source);
+            string converted=Path.ChangeExtension(workbook,".xlsx");ProjectWorkbook.WriteInput(model,converted);workbook=converted;
+        }
+        Reset();return State();
     }
     public object Import(Stream input)
     {
         string dir=Path.Combine(storage,"导入-"+DateTime.Now.ToString("yyyyMMdd-HHmmss")+"-"+Guid.NewGuid().ToString("N")[..6]);Directory.CreateDirectory(dir);
-        string file=Path.Combine(dir,"ZTools.xls");using(var copy=System.IO.File.Create(file)){byte[] buffer=new byte[81920];int count;long total=0;while((count=input.Read(buffer))>0){total+=count;if(total>20*1024*1024)throw new InvalidOperationException("项目文件不能超过 20 MB。");copy.Write(buffer,0,count);}}
+        string file=Path.Combine(dir,"ZTools.xlsx");using(var copy=System.IO.File.Create(file)){byte[] buffer=new byte[81920];int count;long total=0;while((count=input.Read(buffer))>0){total+=count;if(total>20*1024*1024)throw new InvalidOperationException("项目文件不能超过 20 MB。");copy.Write(buffer,0,count);}}
         using(var validation=new WorkbookSession(file)){validation.Save();}workbook=file;Reset();return State();
     }
     void Reset(){output=null;needsCalculation=true;log.Clear();}

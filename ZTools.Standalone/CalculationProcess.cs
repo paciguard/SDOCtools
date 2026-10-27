@@ -34,7 +34,7 @@ internal sealed class CalculationProcess
         if(ProjectPaths.IsSourceWorkbook(workbook))throw new InvalidOperationException("请使用项目 Excel 副本进行计算。");
         string folder=Path.Combine(Path.GetDirectoryName(workbook),".cfl-calculation-"+Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(folder);
-        string staged=Path.Combine(folder,"ZTools.xls");
+        string staged=Path.Combine(folder,Path.GetFileName(workbook));
         var messages=new BlockingCollection<string>();
         var errors=new ConcurrentQueue<string>();
         int outputEnded=0,errorEnded=0;

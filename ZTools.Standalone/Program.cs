@@ -15,18 +15,18 @@ if(args.Contains("--verify-input"))
 {
     System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
     string path=args[Array.IndexOf(args,"--verify-input")+1];
-    using var source=File.OpenRead(path);using var project=new NPOI.HSSF.UserModel.HSSFWorkbook(source,true);
+    using var source=File.OpenRead(path);using var project=NPOI.SS.UserModel.WorkbookFactory.Create(source);
     if(!ProjectWorkbook.IsInputOnly(project))throw new InvalidOperationException("项目文件必须只包含 input 工作表。");
     using var model=ProjectWorkbook.Materialize(project);
     if(model.GetSheet("map")!=null||model.GetSheet("Sec-List")==null||model.GetSheet("List-detail")==null)throw new InvalidOperationException("内部数据模型不完整。");
-    Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(new{inputOnly=true,sheets=new[]{"input"},dropdowns=project.GetSheet("input").GetDataValidations().Count,internalSheets=model.NumberOfSheets}));return;
+    Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(new{inputOnly=true,format=project is NPOI.XSSF.UserModel.XSSFWorkbook?"xlsx":"xls",sheets=new[]{"input"},dropdowns=project.GetSheet("input").GetDataValidations().Count,internalSheets=model.NumberOfSheets}));return;
 }
 if(args.Contains("--probe"))
 {
     var folder=Path.Combine(ProjectPaths.Root,"tests","standalone-probe");Directory.CreateDirectory(folder);
     foreach(var kind in new[]{"GA","PID","SEC"})
     {var notices=new List<string>();var doc=DrawingOutput.ReadTemplate(kind,notices);Console.WriteLine($"{kind}: {doc.Entities.Count()} entities, {doc.BlockRecords.Count} blocks, {notices.Count} import notices");doc.Header.Version=ACadSharp.ACadVersion.AC1032;DwgWriter.Write(Path.Combine(folder,kind+".dwg"),doc);}
-    Console.WriteLine("WORKBOOK_TEMPLATE_OK "+Path.Combine(ProjectPaths.CreateJob(folder),"ZTools.xls"));
+    Console.WriteLine("WORKBOOK_TEMPLATE_OK "+Path.Combine(ProjectPaths.CreateJob(folder),"ZTools.xlsx"));
     return;
 }
 using var sta=new StaWorker();using var workspace=new Workspace();
@@ -37,7 +37,7 @@ if(args.Contains("--smoke"))
         var parent=Path.Combine(ProjectPaths.Root,"tests","standalone-output");Directory.CreateDirectory(parent);
         int existingIndex=Array.IndexOf(args,"--existing-job");
         var job=existingIndex>=0?Path.GetDirectoryName(Path.GetFullPath(args[existingIndex+1])):ProjectPaths.CreateJob(parent);var log=new List<string>();
-        using(var book=new WorkbookSession(Path.Combine(job,"ZTools.xls"),false))
+        using(var book=new WorkbookSession(Path.Combine(job,"ZTools.xlsx"),false))
         {var engine=new SubmissionEngine(book,s=>{log.Add(s);Console.WriteLine(s);});if(existingIndex<0)engine.Calculate();string output=DrawingOutput.Generate(book,new[]{"GA","PID","SEC"},new[]{0},new SheetOptions(),s=>{log.Add(s);Console.WriteLine(s);});Console.WriteLine("STANDALONE_SMOKE_OK "+output);}
         File.WriteAllLines(Path.Combine(job,"standalone-smoke.log"),log);return true;
     });return;

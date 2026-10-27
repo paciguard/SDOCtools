@@ -5,7 +5,7 @@ $manifest=Get-Content (Join-Path $root 'migration\source-manifest-20261023-embed
 $detached=Join-Path ([IO.Path]::GetTempPath()) ('CFL-Embedded-'+[Guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $detached|Out-Null
 Copy-Item -Path (Join-Path $Package '*') -Destination $detached -Recurse -Force
-if(@(Get-ChildItem $detached -Recurse -File|Where-Object {$_.Extension -in '.dwg','.xls','.dvb','.exb'}).Count){throw 'The application still contains external business templates.'}
+if(@(Get-ChildItem $detached -Recurse -File|Where-Object {$_.Extension -in '.dwg','.xls','.xlsx','.dvb','.exb'}).Count){throw 'The application still contains external business templates.'}
 $exe=Join-Path $detached 'ZTools.Standalone.exe'
 $inventoryFile=Join-Path $detached 'inventory.json'
 $inspect=Start-Process $exe -ArgumentList '--verify-templates' -WorkingDirectory $detached -WindowStyle Hidden -PassThru -RedirectStandardOutput $inventoryFile -RedirectStandardError (Join-Path $detached 'inventory.err')
@@ -13,7 +13,7 @@ if(-not $inspect.WaitForExit(30000) -or $inspect.ExitCode -ne 0){throw 'Could no
 $assets=@(Get-Content $inventoryFile -Raw|ConvertFrom-Json)
 if($assets.Count -ne 5){throw 'Expected three embedded DWGs and two workbook templates.'}
 foreach($asset in $assets){
-    if($asset.name -in 'ZTools.xls','Input.xls'){
+    if($asset.name -in 'ZTools.xls','Input.xlsx'){
         if($asset.sha256 -ne (Get-FileHash (Join-Path $root ('Resources\Workbooks\'+$asset.name))).Hash.ToLowerInvariant()){throw 'Embedded workbook differs from its generated source.'}
         continue
     }
@@ -28,7 +28,7 @@ foreach($kind in 'GA','PID','SEC'){
     $drawing=Join-Path $detached ('tests\standalone-probe\'+$kind+'.dwg')
     if(-not(Test-Path -LiteralPath $drawing)){throw "Embedded $kind template could not be read and written."}
 }
-$workbook=@(Get-ChildItem (Join-Path $detached 'tests\standalone-probe') -Recurse -Filter ZTools.xls)
+$workbook=@(Get-ChildItem (Join-Path $detached 'tests\standalone-probe') -Recurse -Filter ZTools.xlsx)
 if($workbook.Count -ne 1){throw 'The probe did not create a private Excel project copy.'}
 & $exe --verify-input $workbook[0].FullName
 if($LASTEXITCODE -ne 0){throw 'Generated public project is not an input-only workbook backed by the embedded model.'}

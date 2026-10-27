@@ -13,6 +13,6 @@
     <Compile Include="..\ZTools.Standalone\Core\Vb.cs;..\ZTools.Standalone\Core\TemplateResources.cs;..\ZTools.Standalone\Core\ProjectWorkbook.cs;..\ZTools.Standalone\Core\SubmissionEngine.cs;..\ZTools.Standalone\Core\SectionSelection.cs;..\ZTools.Standalone\Core\Generated\*.cs;..\ZTools.Standalone\CadAdapter.cs;..\ZTools.Standalone\DrawingOutput.cs" Link="Shared\%(Filename)%(Extension)" />
     <EmbeddedResource Include="..\Referrings\Ztools\TEMPLATE\GA.dwg;..\Referrings\Ztools\TEMPLATE\PID.dwg;..\Referrings\Ztools\TEMPLATE\SEC.dwg;..\Resources\Workbooks\ZTools.xls" LogicalName="ZTools.Templates.%(Filename)%(Extension)" />
     <EmbeddedResource Include="Fonts\NotoSansSC-Regular.ttf" LogicalName="ZTools.Fonts.NotoSansSC.ttf" />
-    <EmbeddedResource Include="..\Resources\Workbooks\Input.xls" LogicalName="ZTools.Templates.Input.xls" />
+    <EmbeddedResource Include="..\Resources\Workbooks\Input.xlsx" LogicalName="ZTools.Templates.Input.xlsx" />
   </ItemGroup>
 </Project>

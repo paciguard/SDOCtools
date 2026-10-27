@@ -9,7 +9,7 @@ $files=@()
 foreach($folder in 'ZTools.Mobile.iOS','ZTools.Offline','ZTools.Mobile.Shared','ZTools.Standalone/Core','licenses'){
     $files+=Get-ChildItem (Join-Path $root $folder) -Recurse -File|Where-Object {$_.FullName -notmatch '[\\/](bin|obj)[\\/]'}
 }
-foreach($relative in 'ZTools.Standalone/CadAdapter.cs','ZTools.Standalone/DrawingOutput.cs','ZTools.Standalone/wwwroot/cfl-logo.jpg','ZTools.Standalone/wwwroot/vendor/three.module.js','ZTools.Standalone/wwwroot/vendor/three.core.js','ZTools.Standalone/wwwroot/vendor/THREE-LICENSE.txt','Referrings/Ztools/ZTools.xls','Resources/Workbooks/ZTools.xls','Resources/Workbooks/Input.xls','Referrings/Ztools/TEMPLATE/GA.dwg','Referrings/Ztools/TEMPLATE/PID.dwg','Referrings/Ztools/TEMPLATE/SEC.dwg','tools/build-mobile-ios.sh','MOBILE-INSTALL.md','THIRD-PARTY-NOTICES.md'){$files+=Get-Item (Join-Path $root $relative)}
+foreach($relative in 'ZTools.Standalone/CadAdapter.cs','ZTools.Standalone/DrawingOutput.cs','ZTools.Standalone/wwwroot/cfl-logo.jpg','ZTools.Standalone/wwwroot/vendor/three.module.js','ZTools.Standalone/wwwroot/vendor/three.core.js','ZTools.Standalone/wwwroot/vendor/THREE-LICENSE.txt','Referrings/Ztools/ZTools.xls','Resources/Workbooks/ZTools.xls','Resources/Workbooks/Input.xlsx','Referrings/Ztools/TEMPLATE/GA.dwg','Referrings/Ztools/TEMPLATE/PID.dwg','Referrings/Ztools/TEMPLATE/SEC.dwg','tools/build-mobile-ios.sh','MOBILE-INSTALL.md','THIRD-PARTY-NOTICES.md'){$files+=Get-Item (Join-Path $root $relative)}
 foreach($file in $files){
     $relative=$file.FullName.Substring($root.Length).TrimStart('\','/')
     $copy=Join-Path $stage $relative;New-Item -ItemType Directory -Path (Split-Path -Parent $copy) -Force|Out-Null

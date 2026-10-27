@@ -1,12 +1,12 @@
 <!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>凯乐提交文件工具</title><link rel="stylesheet" href="app.css?v=1.4"></head>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>凯乐提交文件工具</title><link rel="stylesheet" href="app.css?v=1.5"></head>
 <body>
 <header><img src="cfl-logo.jpg" alt="CFL 凯乐"><div><h1>凯乐提交文件工具</h1><p>项目输入 · 参数复核 · 提交出图</p></div><span class="platform">独立出图工作台</span><button id="refresh" class="quiet">刷新项目</button><button id="closeApp" class="quiet">退出程序</button></header>
 <div id="message" role="status" hidden></div>
 <div class="shell">
 <aside class="nav">
  <section><h2><i>01</i> 项目管理</h2><div class="pair"><button data-action="new">新建项目</button><button data-action="open">打开项目</button></div><p id="job" class="job">请选择项目 Excel 工作簿</p>
- <button class="wide primary" id="editExcel">在 Excel 中输入数据 <b>↗</b></button><button class="wide" id="finishExcel" hidden>保存并返回工作台</button><p class="hint">外部 Excel 仅含 input。数据库、计算表及内部参数由应用管理；请先选择右侧设备，再修改参数。</p></section>
+ <button class="wide primary" id="editExcel">在 Excel 中输入数据 <b>↗</b></button><button class="wide" id="finishExcel" hidden>保存并返回工作台</button><p class="hint">外部 Excel 使用 .xlsx 格式，仅含 input。数据库、计算表及内部参数由应用管理；请先选择右侧设备，再修改参数。</p></section>
  <section><h2><i>02</i> 数据计算</h2><button class="wide" data-action="calculate">计算项目数据</button><p id="calculationStatus" class="hint" role="status">请先计算项目数据。</p><button class="wide" data-action="utility">计算公用工程用量</button></section>
  <section><h2><i>03</i> 参数与选择</h2><div class="params"><button data-parameters="equipment">设备参数</button><button data-parameters="motor">电机与底座</button><button data-parameters="pid">管仪参数</button><button data-parameters="materials">剖面材料</button><button data-parameters="utility">公用工程参数</button><button data-parameters="project">项目信息</button></div><p class="hint">剖面材料中的材质、轴承形式及轴承架材质决定 SEC 图纸和零件明细。管仪与公用工程参数也在此修改。</p><button class="wide" id="printSettings">出图与打印设置</button></section>
  <section><h2><i>04</i> 图纸输出</h2><label class="check"><input type="checkbox" name="kind" value="GA" checked>总装外形图</label><label class="check"><input type="checkbox" name="kind" value="PID" checked>管路仪表图</label><label class="check"><input type="checkbox" name="kind" value="SEC" checked>剖面图及明细表</label><button class="wide primary" id="generate">生成 DWG ＋ PDF</button><div id="templates" class="hint"></div></section>
@@ -22,4 +22,4 @@
 <dialog id="dialog"><form id="parameterForm"><div class="dialog-head"><img src="cfl-logo.jpg" alt="凯乐"><div><h2 id="dialogTitle"></h2><p id="dialogSubtitle">修改将保存到项目 Excel 工作簿</p></div><button type="button" class="close" id="cancelX" aria-label="关闭">×</button></div><div id="fields"></div><div id="formError" role="alert" hidden></div><footer><button type="button" id="cancel">取消</button><button class="primary" id="save" type="submit">保存到 Excel</button></footer></form></dialog>
 <dialog id="creationComplete" class="completion-dialog" aria-labelledby="creationCompleteTitle" aria-describedby="creationSummary"><div class="dialog-head"><img src="cfl-logo.jpg" alt="凯乐 CFL"><h2 id="creationCompleteTitle">图纸生成完成</h2></div><p id="creationSummary" class="creation-summary"></p><form method="dialog"><footer><button class="primary" autofocus>确定</button></footer></form></dialog>
 <div id="busy" hidden><span class="spinner"></span><strong id="busyText">正在处理</strong><span id="elapsed"></span><button id="cancelCalculation" hidden>取消计算</button></div>
-<script type="module" src="app.js?v=1.4"></script></body></html>
+<script type="module" src="app.js?v=1.5"></script></body></html>

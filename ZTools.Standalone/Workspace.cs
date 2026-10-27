@@ -51,15 +51,15 @@ public sealed class Workspace:IDisposable
     public object Create(string parent)
     {
         EnsureIdle();if(string.IsNullOrEmpty(parent)){using var picker=new FolderBrowserDialog {Description="请选择项目保存位置",UseDescriptionForTitle=true};if(ProjectDialog.Show(picker)!=DialogResult.OK)return State();parent=picker.SelectedPath;}
-        workbookPath=Path.Combine(ProjectPaths.CreateJob(parent),"ZTools.xls");LastOutput=null;needsCalculation=true;notice=null;Report("项目已创建："+workbookPath);return State(true);
+        workbookPath=Path.Combine(ProjectPaths.CreateJob(parent),"ZTools.xlsx");LastOutput=null;needsCalculation=true;notice=null;Report("项目已创建："+workbookPath);return State(true);
     }
     public object Select(string path)
     {
-        EnsureIdle();if(string.IsNullOrEmpty(path)){using var picker=new OpenFileDialog{Title="打开 input 项目工作簿",Filter="Excel 输入项目 (*.xls)|*.xls"};if(ProjectDialog.Show(picker)!=DialogResult.OK)return State();path=picker.FileName;}
-        path=Path.GetFullPath(path);if(ProjectPaths.IsSourceWorkbook(path))throw new InvalidOperationException("请打开项目副本。原始模板通过“新建项目”完整复制后使用。");
+        EnsureIdle();if(string.IsNullOrEmpty(path)){using var picker=new OpenFileDialog{Title="打开 input 项目工作簿",Filter="Excel 输入项目 (*.xlsx;*.xls)|*.xlsx;*.xls|Excel 输入项目 (*.xlsx)|*.xlsx|旧版项目 (*.xls)|*.xls"};if(ProjectDialog.Show(picker)!=DialogResult.OK)return State();path=picker.FileName;}
+        path=Path.GetFullPath(path);if(ProjectPaths.IsSourceWorkbook(path))throw new InvalidOperationException("此文件是模板来源，请使用“新建项目”创建可编辑的 .xlsx 副本。");
         string selected=path;path=ProjectWorkbook.ImportLegacy(path);
         using(var test=new WorkbookSession(path,false)) { }
-        workbookPath=path;LastOutput=null;needsCalculation=true;notice=path==selected?null:"已将旧版工作簿导入为仅含 input 的项目副本，原文件未修改。";Report("已打开项目："+path);return State(true);
+        workbookPath=path;LastOutput=null;needsCalculation=true;notice=path==selected?null:"已将旧版工作簿导入为仅含 input 的 .xlsx 项目副本，原文件未修改。";Report("已打开项目："+path);return State(true);
     }
     public object Edit(string sheet)
     {

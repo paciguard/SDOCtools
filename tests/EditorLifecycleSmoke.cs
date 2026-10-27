@@ -23,9 +23,9 @@ internal static class EditorLifecycleSmoke
             // Public projects contain input only; the source database stays embedded.
             var paths=typeof(Workspace).Assembly.GetType("ZTools.Engine.ProjectPaths",true);
             string projectFolder=(string)paths.GetMethod("CreateJob").Invoke(null,new object[]{folder});
-            job=Path.Combine(projectFolder,"ZTools.xls");
+            job=Path.Combine(projectFolder,"ZTools.xlsx");
             System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
-            using(var input=File.OpenRead(job))using(var project=new NPOI.HSSF.UserModel.HSSFWorkbook(input,true))
+            using(var input=File.OpenRead(job))using(var project=NPOI.SS.UserModel.WorkbookFactory.Create(input))
                 if(project.NumberOfSheets!=1||project.GetSheetName(0)!="input")throw new Exception("New project exposes internal worksheets.");
             Console.WriteLine("PASS new project contains only the public input worksheet");
             workspace.Select(job);

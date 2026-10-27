@@ -5,7 +5,7 @@ using NPOI.SS.UserModel;
 using ZTools.Engine;
 System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
 string root=Path.GetFullPath(args[0]),source=Path.Combine(root,"Referrings","Updates","ZTools-20261026.xls");
-string destination=Path.Combine(root,"Resources","Workbooks","ZTools.xls"),project=Path.Combine(root,"dist","CFL-Input","ZTools.xls");
+string destination=Path.Combine(root,"Resources","Workbooks","ZTools.xls"),project=Path.Combine(root,"dist","CFL-Input","ZTools.xlsx");
 Directory.CreateDirectory(Path.GetDirectoryName(destination)!);Directory.CreateDirectory(Path.GetDirectoryName(project)!);
 using var stream=File.OpenRead(source);using var book=new HSSFWorkbook(stream,true);
 int map=book.GetSheetIndex("map");if(map>=0)book.RemoveSheetAt(map);
@@ -19,13 +19,9 @@ for(int row=9;row<39;row++)
 }
 using(var output=File.Create(destination))book.Write(output,true);
 string inputTemplate=Path.Combine(root,"Resources","Workbooks","Input.xls");
-using(var nativeStream=File.OpenRead(inputTemplate))
-using(var nativeInput=new HSSFWorkbook(nativeStream,false))
-{
- ProjectWorkbook.CopyInputLayout(book.GetSheet("input"),nativeInput.GetSheet("input"));
- using var fixedTemplate=new MemoryStream();nativeInput.Write(fixedTemplate,true);nativeStream.Close();File.WriteAllBytes(inputTemplate,fixedTemplate.ToArray());
-}
-ProjectWorkbook.WriteInput(book,project);
+// The archived XLS input template remains a historical migration fixture.
+// New public projects use the owner's supplied XLSX template.
+ProjectWorkbook.Create(project);
 string Hash(string p)=>Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(p))).ToLowerInvariant();
 var record=new{source="Referrings/Updates/ZTools-20261026.xls",sourceSha256=Hash(source),embedded="Resources/Workbooks/ZTools.xls",embeddedSha256=Hash(destination),inputTemplate="Resources/Workbooks/Input.xls",inputTemplateSha256=Hash(inputTemplate),inputSheets=new[]{"input"},removedSheets=new[]{"map"},bearingHouse="Sec-List!O10:O39"};
 File.WriteAllText(Path.Combine(root,"migration","workbook-split-20261026.json"),JsonSerializer.Serialize(record,new JsonSerializerOptions{WriteIndented=true}));

@@ -22,7 +22,7 @@ internal static class Program
             offline.SaveParameters("equipment",row,new[]{new InputChange("input","E"+(21+row),standard)});
             desktop.SaveParameters("equipment",row,new[]{new DesktopChange("input","E"+(21+row),standard)});
         }
-        string excelPath=Path.Combine(folder,"Excel-golden.xls");File.Copy(expected,excelPath);
+        string excelPath=Path.Combine(folder,"Excel-golden.xlsx");File.Copy(expected,excelPath);
         var assembly=typeof(Desktop).Assembly;
         // Run the original Excel-backed adapter independently. Workspace now
         // uses the portable engine, so it cannot itself serve as the oracle.

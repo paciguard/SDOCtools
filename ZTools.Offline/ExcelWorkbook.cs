@@ -7,7 +7,7 @@ using NPOI.SS.Util;
 namespace ZTools.Engine;
 
 // A deliberately limited Excel object model for the migrated VBA rules. All
-// reads and writes remain in the original BIFF8 workbook; no COM or Excel process.
+// calculations use the original BIFF8 model; projects save as XLSX without COM.
 public sealed class ExcelBook : IDisposable
 {
     internal readonly HSSFWorkbook Data;
@@ -19,10 +19,10 @@ public sealed class ExcelBook : IDisposable
     public ExcelApplication Application {get;}
     public ExcelBook(Stream stream,bool project=false)
     {
-        var source=new HSSFWorkbook(stream,true);
+        var source=WorkbookFactory.Create(stream);
         projectFormat=project||ProjectWorkbook.IsInputOnly(source);
         if(projectFormat){try{Data=ProjectWorkbook.Materialize(source);}finally{source.Close();}}
-        else Data=source;
+        else Data=(HSSFWorkbook)source;
         Evaluator=Data.GetCreationHelper().CreateFormulaEvaluator();
         Worksheets=new(this);Application=new(this);
     }

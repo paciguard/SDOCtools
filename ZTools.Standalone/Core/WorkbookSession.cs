@@ -28,7 +28,7 @@ namespace ZTools.Engine
                 {
                     projectHash=System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(FilePath));
                     using var source=new FileStream(FilePath,FileMode.Open,FileAccess.Read,FileShare.ReadWrite);
-                    using var original=new NPOI.HSSF.UserModel.HSSFWorkbook(source,true);
+                    using var original=NPOI.SS.UserModel.WorkbookFactory.Create(source);
                     using var model=ProjectWorkbook.Materialize(original);
                     workingDirectory=Path.Combine(Path.GetTempPath(),"CFL-SubmitTools-Workbooks",Guid.NewGuid().ToString("N"));
                     Directory.CreateDirectory(workingDirectory);workingPath=Path.Combine(workingDirectory,"ZTools.xls");
@@ -163,8 +163,12 @@ namespace ZTools.Engine
         public static bool IsSourceWorkbook(string path)
         {
             string fullPath = Path.GetFullPath(path);
-            if (string.Equals(fullPath, SourceWorkbook, StringComparison.OrdinalIgnoreCase)) return true;
+            if(new[]{SourceWorkbook,Path.Combine(Root,"Referrings","Updates","ZTools-20261026.xls"),Path.Combine(Root,"Referrings","CFL资料工具输入模板.xlsx"),Path.Combine(Root,"Resources","Workbooks","Input.xlsx"),Path.Combine(Root,"Resources","Workbooks","Input.xls"),Path.Combine(Root,"Resources","Workbooks","ZTools.xls")}.Any(source=>string.Equals(fullPath,source,StringComparison.OrdinalIgnoreCase)))return true;
             var folder = new DirectoryInfo(Path.GetDirectoryName(fullPath));
+            string file=Path.GetFileName(fullPath);
+            if(folder.Name.Equals("Referrings",StringComparison.OrdinalIgnoreCase)&&file.Equals("CFL资料工具输入模板.xlsx",StringComparison.OrdinalIgnoreCase))return true;
+            if(folder.Name.Equals("Updates",StringComparison.OrdinalIgnoreCase)&&string.Equals(folder.Parent?.Name,"Referrings",StringComparison.OrdinalIgnoreCase)&&file.Equals("ZTools-20261026.xls",StringComparison.OrdinalIgnoreCase))return true;
+            if(folder.Name.Equals("Workbooks",StringComparison.OrdinalIgnoreCase)&&string.Equals(folder.Parent?.Name,"Resources",StringComparison.OrdinalIgnoreCase)&&new[]{"Input.xls","Input.xlsx","ZTools.xls"}.Contains(file,StringComparer.OrdinalIgnoreCase))return true;
             return string.Equals(Path.GetFileName(fullPath), "ZTools.xls", StringComparison.OrdinalIgnoreCase)
                 && string.Equals(folder.Name, "Ztools", StringComparison.OrdinalIgnoreCase)
                 && string.Equals(folder.Parent?.Name, "Referrings", StringComparison.OrdinalIgnoreCase);
@@ -173,7 +177,7 @@ namespace ZTools.Engine
         {
             string path = Path.Combine(parent, "ZTools-" + DateTime.Now.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N").Substring(0, 6));
             Directory.CreateDirectory(path);
-            ProjectWorkbook.Create(Path.Combine(path,"ZTools.xls"));
+            ProjectWorkbook.Create(Path.Combine(path,"ZTools.xlsx"));
             return path;
         }
     }

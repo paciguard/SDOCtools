@@ -33,7 +33,7 @@ assert (package/'Start.ps1').is_file()
 assert (package/'wwwroot/vendor/three.module.js').is_file()
 assert 'EmbeddedResource' in csproj and 'ZTools.Templates.' in csproj
 assert not (package/'Referrings').exists()
-external = [p for p in package.rglob('*') if p.is_file() and p.suffix.lower() in {'.dwg','.xls','.dvb','.exb'}]
+external = [p for p in package.rglob('*') if p.is_file() and p.suffix.lower() in {'.dwg','.xls','.xlsx','.dvb','.exb'}]
 assert not external, external
 inspection = subprocess.run([str(package/'ZTools.Standalone.exe'),'--verify-templates'], capture_output=True, text=True, encoding='utf-8-sig', check=True,
                             creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
@@ -41,7 +41,7 @@ inventory = json.loads(inspection.stdout)
 assert len(inventory) == 5
 source_entries = json.loads((root/args.manifest).read_text(encoding='utf-8'))
 for asset in inventory:
-    if asset['name'] in {'ZTools.xls', 'Input.xls'}:
+    if asset['name'] in {'ZTools.xls', 'Input.xlsx'}:
         model = root/'Resources/Workbooks'/asset['name']
         assert asset['sha256'] == hashlib.sha256(model.read_bytes()).hexdigest()
         assert asset['bytes'] == model.stat().st_size

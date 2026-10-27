@@ -47,11 +47,44 @@ using(var session=new WorkbookSession(housing.Workbook))
 }
 using(var source=TemplateResources.Open("ZTools.xls"))using(var internalModel=new NPOI.HSSF.UserModel.HSSFWorkbook(source,true))
     if(internalModel.GetSheet("map")!=null||internalModel.GetSheet("List-detail")==null)throw new Exception("Embedded model must remove map and retain the material database");
-using(var saved=System.IO.File.OpenRead(housing.Workbook))using(var publicProject=new NPOI.HSSF.UserModel.HSSFWorkbook(saved,true))
+using(var saved=System.IO.File.OpenRead(housing.Workbook))using(var publicProject=NPOI.SS.UserModel.WorkbookFactory.Create(saved))
 {
     if(publicProject.NumberOfSheets!=1||publicProject.GetSheetName(0)!="input")throw new Exception("Public project exposes internal data sheets");
+    if(publicProject is not NPOI.XSSF.UserModel.XSSFWorkbook||Path.GetExtension(housing.Workbook)!=".xlsx")throw new Exception("Public project must use real XLSX format");
     if(publicProject.GetSheet("input").GetDataValidations().Count<8)throw new Exception("Input-only workbook lost its dropdowns");
 }
+using(var template=TemplateResources.Open("Input.xlsx"))
+using(var originalPackage=new System.IO.Compression.ZipArchive(template,System.IO.Compression.ZipArchiveMode.Read))
+using(var savedPackage=System.IO.Compression.ZipFile.OpenRead(housing.Workbook))
+    foreach(var entry in originalPackage.Entries.Where(e=>e.FullName.StartsWith("xl/drawings/")||e.FullName.StartsWith("xl/activeX/")||e.FullName.StartsWith("xl/ctrlProps/")))
+    {
+        using var expected=entry.Open();using var actual=savedPackage.GetEntry(entry.FullName).Open();
+        if(!System.Security.Cryptography.SHA256.HashData(expected).SequenceEqual(System.Security.Cryptography.SHA256.HashData(actual)))throw new Exception("Saved XLSX rewrote legacy drawing/control content: "+entry.FullName);
+    }
+// Earlier input-only XLS projects use the same state payload in HPSF properties.
+// Convert one without losing the per-project material overrides or source bytes.
+string legacyStorage=Path.Combine(folder,"legacy-xls-regression"),legacyFolder=Path.Combine(legacyStorage,"old-project");
+Directory.CreateDirectory(legacyFolder);string legacyPath=Path.Combine(legacyFolder,"ZTools.xls");
+using(var oldTemplate=System.IO.File.OpenRead("Resources/Workbooks/Input.xls"))
+using(var oldProject=new NPOI.HSSF.UserModel.HSSFWorkbook(oldTemplate,true))
+using(var saved=System.IO.File.OpenRead(housing.Workbook))
+using(var current=new NPOI.XSSF.UserModel.XSSFWorkbook(saved))
+{
+    oldProject.CreateInformationProperties();var stateProperties=new NPOI.HPSF.CustomProperties();var properties=current.GetProperties().CustomProperties;
+    int count=int.Parse(Convert.ToString(properties.GetProperty("CFL_ProjectState_Count").Item));
+    stateProperties.Put("CFL_ProjectState_Count",count.ToString());
+    for(int i=0;i<count;i++){string name="CFL_ProjectState_"+i.ToString("D4");stateProperties.Put(name,Convert.ToString(properties.GetProperty(name).Item));}
+    oldProject.DocumentSummaryInformation.CustomProperties=stateProperties;
+    using var output=System.IO.File.Create(legacyPath);oldProject.Write(output,true);
+}
+byte[] legacyHash=System.Security.Cryptography.SHA256.HashData(System.IO.File.ReadAllBytes(legacyPath));
+var migrated=new OfflineProject(legacyStorage);migrated.Open("old-project");
+if(Path.GetExtension(migrated.Workbook)!=".xlsx"||migrated.Parameters("materials",0).Fields.Single(f=>f.Address=="O10").Value!="BH-330-CHECK")throw new Exception("XLS migration lost internal material parameters");
+if(!legacyHash.SequenceEqual(System.Security.Cryptography.SHA256.HashData(System.IO.File.ReadAllBytes(legacyPath))))throw new Exception("Migration modified the original XLS");
+using(var full=System.IO.File.OpenRead("Referrings/Updates/ZTools-20261026.xls"))migrated.Import(full);
+using(var imported=System.IO.File.OpenRead(migrated.Workbook))using(var book=NPOI.SS.UserModel.WorkbookFactory.Create(imported))
+    if(book is not NPOI.XSSF.UserModel.XSSFWorkbook||book.NumberOfSheets!=1||book.GetSheetName(0)!="input")throw new Exception("Full XLS import did not create an input-only XLSX");
+Console.WriteLine("PASS old input-only XLS state and full XLS imports migrate to genuine XLSX; original files remain intact");
 string originalGrade=housing.Parameters("equipment",0).Fields.Single(f=>f.Address=="O21").Value;
 string sectionGrade=housing.Parameters("materials",0).Fields.Single(f=>f.Address=="F10").Choices.First(g=>g!=originalGrade);
 housing.SaveParameters("materials",0,new[]{new InputChange("Sec-List","F10",sectionGrade)});

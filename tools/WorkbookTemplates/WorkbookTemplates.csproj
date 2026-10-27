@@ -1,1 +1,9 @@
-<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings></PropertyGroup><ItemGroup><PackageReference Include="NPOI" Version="2.7.5"/><Compile Include="../../ZTools.Standalone/Core/ProjectWorkbook.cs;../../ZTools.Standalone/Core/TemplateResources.cs" Link="Shared/%(Filename)%(Extension)"/><EmbeddedResource Include="../../Resources/Workbooks/Input.xls" LogicalName="ZTools.Templates.Input.xls"/></ItemGroup></Project>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings></PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="NPOI" Version="2.7.5" />
+    <Compile Include="../../ZTools.Standalone/Core/ProjectWorkbook.cs;../../ZTools.Standalone/Core/TemplateResources.cs" Link="Shared/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="../../Resources/Workbooks/Input.xlsx" LogicalName="ZTools.Templates.Input.xlsx" />
+    <EmbeddedResource Include="../../Resources/Workbooks/ZTools.xls" LogicalName="ZTools.Templates.ZTools.xls" />
+  </ItemGroup>
+</Project>

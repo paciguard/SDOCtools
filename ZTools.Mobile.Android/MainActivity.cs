@@ -34,7 +34,7 @@ public sealed class MainActivity:Activity
             }
             else if(command=="export")
             {
-                string format=data.GetProperty("format").GetString();string path=format=="xls"?bridge.Project.Workbook:bridge.Project.File(data.GetProperty("id").GetInt32(),format);
+                string format=data.GetProperty("format").GetString();string path=format is "xlsx" or "xls"?bridge.Project.Workbook:bridge.Project.File(data.GetProperty("id").GetInt32(),format);
                 if(path==null)throw new InvalidOperationException("请先打开项目。");
                 var uri=await Pick(true,Path.GetFileName(path));if(uri==null)throw new InvalidOperationException("已取消导出。");
                 using var source=System.IO.File.OpenRead(path);using var output=ContentResolver.OpenOutputStream(uri);await source.CopyToAsync(output);result=new{saved=true};

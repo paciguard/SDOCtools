@@ -14,7 +14,7 @@
     <PackageReference Include="PDFsharp-GDI" Version="6.2.4" />
     <Content Update="wwwroot\**\*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <EmbeddedResource Include="..\Referrings\Ztools\TEMPLATE\GA.dwg;..\Referrings\Ztools\TEMPLATE\PID.dwg;..\Referrings\Ztools\TEMPLATE\SEC.dwg;..\Resources\Workbooks\ZTools.xls" LogicalName="ZTools.Templates.%(Filename)%(Extension)" />
-    <EmbeddedResource Include="..\Resources\Workbooks\Input.xls" LogicalName="ZTools.Templates.Input.xls" />
+    <EmbeddedResource Include="..\Resources\Workbooks\Input.xlsx" LogicalName="ZTools.Templates.Input.xlsx" />
   </ItemGroup>
   <Target Name="CloseOwnApplicationBeforeBuild" BeforeTargets="CoreClean;PrepareForBuild" Condition="'$(DesignTimeBuild)' != 'true' and '$(OS)' == 'Windows_NT'">
     <Exec Command="powershell.exe -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\..\tools\prepare-build.ps1&quot; -OutputDirectory &quot;$(TargetDir).&quot;" />

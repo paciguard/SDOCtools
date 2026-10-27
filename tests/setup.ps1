@@ -33,7 +33,7 @@ try{
     $inventory=& $exe --verify-templates|ConvertFrom-Json
     if($LASTEXITCODE -ne 0 -or @($inventory).Count -ne 5){throw 'Installed embedded templates could not be read.'}
     foreach($asset in $inventory){
-        $relative=if($asset.name -in 'ZTools.xls','Input.xls'){'Resources\Workbooks\'+$asset.name}else{'Referrings\Ztools\TEMPLATE\'+$asset.name}
+        $relative=if($asset.name -in 'ZTools.xls','Input.xlsx'){'Resources\Workbooks\'+$asset.name}else{'Referrings\Ztools\TEMPLATE\'+$asset.name}
         if((Get-FileHash (Join-Path $root $relative)).Hash.ToLowerInvariant() -ne $asset.sha256){throw 'Installed template differs from the original.'}
     }
     $child=Start-Process -FilePath $exe -ArgumentList '--no-browser','--port','55195' -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $testRoot 'app.log') -RedirectStandardError (Join-Path $testRoot 'app.err')

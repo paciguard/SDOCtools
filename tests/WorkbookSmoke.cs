@@ -35,7 +35,7 @@ internal static class WorkbookSmoke
             string parent = Path.Combine(ProjectPaths.Root,"tests","output");
             Directory.CreateDirectory(parent);
             string job = ProjectPaths.CreateJob(parent);
-            using (var session = new WorkbookSession(Path.Combine(job,"ZTools.xls"),false))
+            using (var session = new WorkbookSession(Path.Combine(job,"ZTools.xlsx"),false))
             {
                 Check(session.Book.Worksheets.Count == 19, "Private working model retains the 19 internal/input sheets and omits map");
                 var engine = new SubmissionEngine(session,Console.WriteLine);
