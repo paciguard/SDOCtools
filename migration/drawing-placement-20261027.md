@@ -1,0 +1,9 @@
+# GA dimension placement and final PDF export
+
+The owner's 2026-10-27 screenshot highlighted the GA foundation/anchor dimension (940) whose extension lines and label were shifted relative to the equipment. The ZA/CZ path places `geduan1` at `(12.6394, -4.4978)`. The old renderer exploded the parent insert, but the dimension's cached anonymous block remained in its original coordinates. Newly inserted attribute labels also retained block-local coordinates.
+
+The shared Windows/mobile renderer now traverses the original block geometry with composed placements. Dimension-cache lines, arrows and text use the same placement as their owning block. Curves are sampled before placement so nonuniform scale also preserves their shape. Attribute instances are created from the supplied definitions and placed once in their owner's coordinates. Block base points are subtracted before scale and rotation.
+
+Drawing generation now saves and reopens the completed DWG, validates it, and then builds the PDF and viewer scene from that saved file. Original templates and database values remain unchanged. Earlier drawing outputs are retained and must be regenerated to receive the correction. Template dimensions remain schematic, as indicated by the existing NO SCALE note; this change does not resize equipment to match numeric dimension labels.
+
+Regression coverage uses the original `GA.dwg`/`geduan1` dimension graphics and independently computed expected endpoints/label positions. It covers ZA/CZ translation, rotation and scale, nonuniform scale with a nonzero base point, and nested inserts, both before and after a DWG write/read round trip. The offline integration suite compares every delivered GA/PID/SEC preview/PDF scene against a fresh scene from its saved DWG. Rendered GA PDFs and the Windows drawing-generation path are also checked before release.

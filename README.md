@@ -45,6 +45,8 @@ After a drawing batch is successfully saved, **图纸生成完成** displays its
 
 Results are stored in `<project>/Output-Standalone/<timestamp>/GA|PID|SEC`. Each drawing has a DWG, PDF, and a temporary scene JSON used by the viewer. Import notices are recorded in `compatibility.log`. Use **退出程序** when finished to close the local drawing service. Closing only the browser tab leaves the service running. The source Excel and DWG templates are never used as writable job files. Excel VBA macros are disabled in the app's private Excel instance. Close separately opened project copies before opening them in the app.
 
+Dimension graphics and labels follow each block's position, rotation, scale and base point, including nested blocks. The application saves and reopens the completed DWG before exporting its PDF and preview. This keeps GA foundation/anchor dimensions aligned with the placed geometry. Regenerate earlier drawings to apply the correction; existing output files are retained.
+
 ## Drawing and calculation components
 
 - **ACadSharp 3.8.0** reads DWG, inserts blocks, edits attributes/text/layers, and writes DWG in AC1032 format (AutoCAD 2018 generation). This is an independent .NET library, not Autodesk ObjectARX or RealDWG.
@@ -92,6 +94,7 @@ A missing pump/baseplate record reports the selected database, model, baseplate 
 - `tests/embedded-templates.ps1`: runs a package outside the checkout with no external templates, verifies all five embedded hashes, reads/writes the three DWGs, and checks input-only project creation backed by the embedded model without requiring Office.
 - `tests/EditorLifecycleSmoke.csproj`: requires desktop Excel; checks save-and-return, saved/closed workbook recovery, disconnected Excel, save-error retry, and preservation of another open workbook, using private workbook copies.
 - `tests/DrawingSmoke.csproj`: regenerates vector PDFs from six saved DWG files for visual regression review.
+- `tests/DrawingPlacementSmoke/`: checks GA anchor-dimension lines and labels before and after DWG save, with translation, rotation, scale, nonzero base point and nested blocks.
 - `tests/WorkbookSmoke.csproj`: detailed workbook/SEC regression checks; requires the .NET Framework 4.8 targeting pack.
 
 The application additionally reopens every saved DWG to check entity counts, equipment tags, and the first SEC material-list part. Sample PDF pages are rendered for visual review. These checks do not establish fidelity for every possible input/model combination.

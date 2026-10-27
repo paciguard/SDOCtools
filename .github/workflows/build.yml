@@ -54,6 +54,12 @@ jobs:
           dotnet build tests/OfflineCalculationSmoke/OfflineCalculationSmoke.csproj -c Release --disable-build-servers /p:RestorePackagesPath="$pwd/.tools/nuget" /p:UseSharedCompilation=false /nr:false /m:1
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           ./tests/OfflineCalculationSmoke/bin/Release/net8.0/OfflineCalculationSmoke.exe
+      - name: Verify dimension graphics and labels follow block placement
+        shell: pwsh
+        run: |
+          dotnet build tests/DrawingPlacementSmoke/DrawingPlacementSmoke.csproj -c Release --disable-build-servers /p:RestorePackagesPath="$pwd/.tools/nuget" /p:UseSharedCompilation=false /nr:false /m:1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ./tests/DrawingPlacementSmoke/bin/Release/net8.0/DrawingPlacementSmoke.exe
       - name: Verify offline mobile calculations and DWG/PDF output without Excel
         shell: pwsh
         run: |

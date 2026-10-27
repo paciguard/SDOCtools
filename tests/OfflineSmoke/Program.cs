@@ -25,6 +25,13 @@ if(app.Files().Length!=6)throw new Exception("Expected six drawing pairs");
 var sceneReply=MobileBridge.Reply(19,JsonSerializer.Deserialize<JsonElement>(app.Scene(0)));
 if(MobileBridge.Scripts(19,sceneReply).Count()<2)throw new Exception("Large mobile previews must use chunked messages");
 foreach(var file in app.Files())foreach(var format in new[]{"dwg","pdf","scene.json"})if(new FileInfo(app.File(file.Id,format)).Length==0)throw new Exception("Empty output");
+foreach(var file in app.Files())
+{
+    var saved=JsonSerializer.Deserialize<PlotScene>(app.Scene(file.Id),DrawingOutput.JsonOptions);
+    var reopened=DrawingOutput.Scene(DwgReader.Read(app.File(file.Id,"dwg")),saved.Frame);
+    if(JsonSerializer.Serialize(saved,DrawingOutput.JsonOptions)!=JsonSerializer.Serialize(reopened,DrawingOutput.JsonOptions))throw new Exception("PDF/preview scene differs from the final saved DWG");
+}
+Console.WriteLine("PASS GA/PID/SEC PDF and preview scenes match the reopened saved DWGs");
 System.IO.File.WriteAllText(Path.Combine(folder,"last-workbook.txt"),app.Workbook);
 Console.WriteLine("OFFLINE_SMOKE_OK "+app.Workbook);
 
