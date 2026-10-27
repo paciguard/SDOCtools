@@ -28,6 +28,15 @@ try{
     $files=Invoke-RestMethod "$base/api/files" -NoProxy
     $scene=Invoke-RestMethod "$base/api/file/$($files[0].id)/scene" -NoProxy
     if(($scene|ConvertTo-Json -Depth 12 -Compress) -notmatch 'XLSX-BH-330'){throw 'Saved SEC scene lost the XLSX bearing material'}
+    foreach($part in '360.01','360.02'){
+        $matched=$false
+        foreach($number in @($scene.items|Where-Object text -eq $part)){
+            foreach($material in @($scene.items|Where-Object text -eq 'XLSX-BH-330')){
+                if([Math]::Abs($number.points[0][1]-$material.points[0][1]) -lt 0.01){$matched=$true}
+            }
+        }
+        if(-not $matched){throw "Saved Windows SEC material row did not inherit the bearing-house material: $part"}
+    }
     $excel=New-Object -ComObject Excel.Application
     $excel.AutomationSecurity=3;$excel.EnableEvents=$false;$excel.DisplayAlerts=$false;$excel.AskToUpdateLinks=$false
     try{

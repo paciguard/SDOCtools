@@ -38,13 +38,30 @@ housing.Calculate();housing.Generate(new[]{"SEC"},new[]{0});
 var housingDrawing=DwgReader.Read(housing.File(0,"dwg"));
 if(!housingDrawing.Entities.OfType<Insert>().SelectMany(i=>i.Attributes).Any(a=>a.Value=="BH-330-CHECK"))throw new Exception("Saved SEC DWG did not contain the bearing-house material override");
 if(!housing.Scene(0).Contains("BH-330-CHECK"))throw new Exception("SEC PDF scene did not contain the bearing-house material override");
+var housingScene=JsonSerializer.Deserialize<PlotScene>(housing.Scene(0),DrawingOutput.JsonOptions);
+foreach(string part in new[]{"360.01","360.02"})
+{
+    var table=housingDrawing.Entities.OfType<Insert>().Single(i=>i.Attributes.Any(a=>a.Tag.StartsWith("PN",StringComparison.OrdinalIgnoreCase)&&a.Value==part));
+    var number=table.Attributes.Single(a=>a.Tag.StartsWith("PN",StringComparison.OrdinalIgnoreCase)&&a.Value==part);
+    if(table.Attributes.Single(a=>a.Tag.Equals("MAT"+number.Tag[2..],StringComparison.OrdinalIgnoreCase)).Value!="BH-330-CHECK")throw new Exception("Saved SEC DWG did not inherit bearing-house material for "+part);
+    if(!housingScene.Items.Any(p=>p.Text==part&&housingScene.Items.Any(m=>m.Text=="BH-330-CHECK"&&Math.Abs(m.Points[0][1]-p.Points[0][1])<0.01)))throw new Exception("SEC PDF scene did not inherit bearing-house material for "+part);
+}
 using(var session=new WorkbookSession(housing.Workbook))
 {
-    new SubmissionEngine(session,_=>{}).PrepareSection(0);int houses=0;
-    for(int r=72;r<=123;r++)if(new[]{"330.01","330.02","330.03"}.Contains(session.Cell("Sheet1","DB"+r)))
-    {houses++;if(session.Cell("Sheet1","DD"+r)!="BH-330-CHECK")throw new Exception("SEC material list did not apply the bearing-house material");}
-    if(houses==0)throw new Exception("Bearing-house regression list contains no bearing-house parts");
+    var engine=new SubmissionEngine(session,_=>{});engine.PrepareSection(0);var linked=new Dictionary<string,int>();
+    for(int r=72;r<=123;r++)if(new[]{"330.01","330.02","330.03","360.01","360.02"}.Contains(session.Cell("Sheet1","DB"+r)))
+    {linked.Add(session.Cell("Sheet1","DB"+r),r);if(session.Cell("Sheet1","DD"+r)!="BH-330-CHECK")throw new Exception("SEC material list did not apply the bearing-house material");}
+    if(!linked.ContainsKey("330.01")||!linked.ContainsKey("360.01")||!linked.ContainsKey("360.02"))throw new Exception("Bearing-house regression must cover the house and both linked parts");
+    session.Book.Worksheets["Sec-List"].Range["O10"].Value2="";engine.PrepareSection(0);
+    int grade=Enumerable.Range(6,11).Single(c=>session.Cell("List-detail",NPOI.SS.Util.CellReference.ConvertNumToColString(c-1)+"2")==session.Cell("Sec-List","F10"));
+    foreach(var pair in linked)
+    {
+        int detail=Enumerable.Range(3,151).Single(r=>session.Cell("List-detail","C"+r)==pair.Key);
+        string expected=session.Cell("List-detail",NPOI.SS.Util.CellReference.ConvertNumToColString(grade-1)+detail);
+        if(session.Cell("Sheet1","DD"+pair.Value)!=expected)throw new Exception("Blank bearing-house material did not retain database material for "+pair.Key);
+    }
 }
+Console.WriteLine("PASS parts 360.01/360.02 inherit specified bearing-house material in the list, saved DWG and PDF scene; blank input retains database materials");
 using(var source=TemplateResources.Open("ZTools.xls"))using(var internalModel=new NPOI.HSSF.UserModel.HSSFWorkbook(source,true))
     if(internalModel.GetSheet("map")!=null||internalModel.GetSheet("List-detail")==null)throw new Exception("Embedded model must remove map and retain the material database");
 using(var saved=System.IO.File.OpenRead(housing.Workbook))using(var publicProject=NPOI.SS.UserModel.WorkbookFactory.Create(saved))

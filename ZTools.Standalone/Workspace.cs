@@ -158,7 +158,7 @@ public sealed class Workspace:IDisposable
             case "pid":
                 title="管仪参数";foreach(var col in new[]{"F","G","H","I"})Field("PID",col,10+index,book.Cell("PID",col+"8"));foreach(var col in new[]{"Y","Z"})Field("input",col,21+index,book.Cell("input",col+"19"));break;
             case "materials":
-                title="剖面与材料清单参数";foreach(var col in new[]{"F","G","H","I","J","K","L","M","N","O"})Field("Sec-List",col,10+index,col=="O"?"轴承架材质（330.01 / 330.02 / 330.03）":book.Cell("Sec-List",col+"8"));break;
+                title="剖面与材料清单参数";foreach(var col in new[]{"F","G","H","I","J","K","L","M","N","O"})Field("Sec-List",col,10+index,col=="O"?"轴承架材质（330.01 / 330.02 / 330.03；360.01 / 360.02）":book.Cell("Sec-List",col+"8"));break;
             case "utility":
                 title="公用工程参数";foreach(var col in new[]{"E","F","G","H","I","J","K"})Field("Utility",col,13+index,book.Cell("Utility",col+"12"));break;
             case "project":

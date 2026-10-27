@@ -152,7 +152,8 @@ namespace ZTools.Engine
             int materialColumn = FindHeader("List-detail", 2, 6, 16, materialClass);
             if (listColumn < 0) throw new InvalidOperationException("Sheet1!CC" + row + " 返回的材料清单名“" + listName + "”在 List-all 第 2 行中不存在。请检查泵版本、轴承形式及轴承架号。");
             if (materialColumn < 0) throw new InvalidOperationException("Sec-List!F" + (10+k) + " 的材质等级“" + materialClass + "”在 List-detail 第 2 行中不存在。");
-            var overrides = new Dictionary<string, int> { { "210.01",7 }, { "940.01",8 }, { "230.01",9 }, { "503.01",10 }, { "503.02",10 }, { "502.01",11 }, { "502.02",11 }, { "922.01",12 }, { "525.02",13 }, { "330.01",15 }, { "330.02",15 }, { "330.03",15 } };
+            // A specified bearing-house material also applies to parts 360.01/360.02.
+            var overrides = new Dictionary<string, int> { { "210.01",7 }, { "940.01",8 }, { "230.01",9 }, { "503.01",10 }, { "503.02",10 }, { "502.01",11 }, { "502.02",11 }, { "922.01",12 }, { "525.02",13 }, { "330.01",15 }, { "330.02",15 }, { "330.03",15 }, { "360.01",15 }, { "360.02",15 } };
             dynamic listSheet = Book.Worksheets["List-all"];
             var listData = (object[,])listSheet.Range[listSheet.Cells[3,listColumn],listSheet.Cells[54,listColumn]].Value2;
             var detailData = (object[,])Book.Worksheets["List-detail"].Range["C3:Q153"].Value2;

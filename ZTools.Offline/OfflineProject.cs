@@ -107,7 +107,7 @@ public sealed partial class OfflineProject
             case "equipment":title="设备参数";foreach(string col in new[]{"D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","X","Y","Z","AA","AB","AC","AD"})Field("input",col+(21+index),b.Cell("input",col+"19"));break;
             case "motor":title="电机与底座";foreach(string col in new[]{"S","T","U","V","W"})Field("input",col+(21+index),b.Cell("input",col+"19"));break;
             case "pid":title="管仪参数";foreach(string col in new[]{"F","G","H","I"})Field("PID",col+(10+index),b.Cell("PID",col+"8"));foreach(string col in new[]{"Y","Z"})Field("input",col+(21+index),b.Cell("input",col+"19"));break;
-            case "materials":title="剖面与材料清单参数";foreach(string col in new[]{"F","G","H","I","J","K","L","M","N","O"})Field("Sec-List",col+(10+index),col=="O"?"轴承架材质（330.01 / 330.02 / 330.03）":b.Cell("Sec-List",col+"8"));break;
+            case "materials":title="剖面与材料清单参数";foreach(string col in new[]{"F","G","H","I","J","K","L","M","N","O"})Field("Sec-List",col+(10+index),col=="O"?"轴承架材质（330.01 / 330.02 / 330.03；360.01 / 360.02）":b.Cell("Sec-List",col+"8"));break;
             case "utility":title="公用工程参数";foreach(string col in new[]{"E","F","G","H","I","J","K"})Field("Utility",col+(13+index),b.Cell("Utility",col+"12"));break;
             default:throw new ArgumentException("未知参数窗口。");
         }
