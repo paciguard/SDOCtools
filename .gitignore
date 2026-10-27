@@ -14,6 +14,7 @@ tests/plot-settings.png
 *.dwl
 *.dwl2
 dist/
+tmp/pdfs/
 tests/standalone-output/
 tests/standalone-probe/
 tests/standalone-review/

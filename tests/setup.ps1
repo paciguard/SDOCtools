@@ -1,4 +1,4 @@
-param([string]$Setup=(Join-Path (Split-Path -Parent $PSScriptRoot) 'dist\CFL-Setup\CFL-SubmitTools-Setup-1.0.0-win-x64.exe'))
+﻿param([string]$Setup=(Join-Path (Split-Path -Parent $PSScriptRoot) 'dist\CFL-Setup\CFL-SubmitTools-Setup-1.0.0-win-x64.exe'))
 $ErrorActionPreference='Stop'
 $registration='HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\{1A9B83B8-65B6-49F5-BA87-C79DD195710F}_is1'
 if(Test-Path $registration){throw 'An installation is already registered. Run this check with a clean test user.'}
@@ -27,9 +27,10 @@ try{
     if(-not(Test-Path $exe) -or -not(Test-Path $uninstall)){throw 'Installed executable or uninstaller is missing.'}
     $runtime=Get-Content (Join-Path $install 'ZTools.Standalone.runtimeconfig.json') -Raw|ConvertFrom-Json
     if(-not $runtime.runtimeOptions.includedFrameworks -or $runtime.runtimeOptions.frameworks){throw 'Installed app is not self-contained.'}
-    foreach($asset in 'coreclr.dll','hostfxr.dll','cfl.ico','wwwroot\cfl-logo.jpg','licenses\Microsoft-NET-LICENSE.txt'){
+    foreach($asset in 'coreclr.dll','hostfxr.dll','cfl.ico','wwwroot\cfl-logo.jpg','licenses\Microsoft-NET-LICENSE.txt','CFL-User-Guide-zh-CN.pdf'){
         if(-not(Test-Path (Join-Path $install $asset))){throw "Installed asset is missing: $asset"}
     }
+    if((Get-FileHash (Join-Path $install 'CFL-User-Guide-zh-CN.pdf')).Hash -ne (Get-FileHash (Join-Path $root 'output/pdf/凯乐提交文件工具_用户操作指南_中文版.pdf')).Hash){throw 'Installed Chinese user guide differs from the approved PDF.'}
     $inventory=& $exe --verify-templates|ConvertFrom-Json
     if($LASTEXITCODE -ne 0 -or @($inventory).Count -ne 5){throw 'Installed embedded templates could not be read.'}
     foreach($asset in $inventory){

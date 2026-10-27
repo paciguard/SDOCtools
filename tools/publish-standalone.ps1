@@ -1,4 +1,4 @@
-param([ValidateSet('Debug','Release')][string]$Configuration='Release',[switch]$SelfContained)
+﻿param([ValidateSet('Debug','Release')][string]$Configuration='Release',[switch]$SelfContained)
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path -Parent $PSScriptRoot
 $destination=Join-Path $projectRoot 'dist\CFL-SubmitTools'
@@ -19,6 +19,8 @@ Invoke-Dotnet (@('publish',(Join-Path $projectRoot 'ZTools.Standalone\ZTools.Sta
 Copy-Item -LiteralPath (Join-Path $projectRoot 'tools\Start.ps1') -Destination (Join-Path $destination 'Start.ps1') -Force
 Copy-Item -LiteralPath (Join-Path $projectRoot 'THIRD-PARTY-NOTICES.md') -Destination $destination -Force
 Copy-Item -LiteralPath (Join-Path $projectRoot 'README.md') -Destination $destination -Force
+$guide=Join-Path $projectRoot 'output/pdf/凯乐提交文件工具_用户操作指南_中文版.pdf'
+Copy-Item -LiteralPath $guide -Destination (Join-Path $destination 'CFL-User-Guide-zh-CN.pdf') -Force
 function Get-SharedFileHash([string]$Path){
     $stream=[IO.File]::Open($Path,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::ReadWrite)
     $hasher=[Security.Cryptography.SHA256]::Create()

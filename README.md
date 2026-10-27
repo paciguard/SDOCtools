@@ -2,6 +2,8 @@
 
 The active application is C#/.NET 8 with a Chinese interface, the supplied CFL logo, and an offline Three.js/WebGL drawing viewer. It reads the original DWG templates directly and generates editable DWG files and vector PDF files without starting AutoCAD. No DXF conversion is involved.
 
+The [Chinese user guide (PDF)](output/pdf/凯乐提交文件工具_用户操作指南_中文版.pdf) covers installation, the XLSX project workflow, parameter dialogs, SEC material rules, drawing output and troubleshooting. It includes the CFL logo, an interface map, quick steps and a mobile appendix. The Windows package installs it as `CFL-User-Guide-zh-CN.pdf`. Its source is `tools/docs/build_user_guide.py`; regeneration requires Python with `reportlab` and `pypdf` and uses the bundled licensed Chinese font. PDF previews under `tmp/pdfs/` are temporary and excluded from Git.
+
 Native Android and iPhone projects also share a portable offline engine that uses the embedded XLS model and reads/writes XLSX input projects without Excel. Android APK and the iPhone Mac build kit are prepared under `dist/CFL-Mobile`. See [MOBILE-INSTALL.md](MOBILE-INSTALL.md) for installation, Mac signing and validation limits. The phone projects are separate from the Windows application.
 
 Mobile version 1.1 (build 2) enables **生成 DWG＋PDF** after a successful completed calculation and adds live progress and cooperative cancellation on both phone platforms. The Android installer and iPhone Mac build kit are refreshed together; the build kit is not a signed IPA.
