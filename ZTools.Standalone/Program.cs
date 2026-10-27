@@ -11,6 +11,16 @@ if(args.Contains("--verify-templates"))
     Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(TemplateResources.Inventory,DrawingOutput.JsonOptions));
     return;
 }
+if(args.Contains("--verify-input"))
+{
+    System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+    string path=args[Array.IndexOf(args,"--verify-input")+1];
+    using var source=File.OpenRead(path);using var project=new NPOI.HSSF.UserModel.HSSFWorkbook(source,true);
+    if(!ProjectWorkbook.IsInputOnly(project))throw new InvalidOperationException("项目文件必须只包含 input 工作表。");
+    using var model=ProjectWorkbook.Materialize(project);
+    if(model.GetSheet("map")!=null||model.GetSheet("Sec-List")==null||model.GetSheet("List-detail")==null)throw new InvalidOperationException("内部数据模型不完整。");
+    Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(new{inputOnly=true,sheets=new[]{"input"},dropdowns=project.GetSheet("input").GetDataValidations().Count,internalSheets=model.NumberOfSheets}));return;
+}
 if(args.Contains("--probe"))
 {
     var folder=Path.Combine(ProjectPaths.Root,"tests","standalone-probe");Directory.CreateDirectory(folder);

@@ -2,6 +2,8 @@
   <PropertyGroup><TargetFramework>net8.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>disable</Nullable><NoWarn>$(NoWarn);CS0219</NoWarn></PropertyGroup>
   <ItemGroup>
     <PackageReference Include="NPOI" Version="2.7.5" />
-    <Compile Include="../ZTools.Offline/ExcelWorkbook.cs;../ZTools.Offline/WorkbookSession.cs;../ZTools.Standalone/Core/Vb.cs;../ZTools.Standalone/Core/SubmissionEngine.cs;../ZTools.Standalone/Core/SectionSelection.cs;../ZTools.Standalone/Core/Generated/WorkbookCalculations.cs" Link="Shared/%(Filename)%(Extension)" />
+    <Compile Include="../ZTools.Offline/ExcelWorkbook.cs;../ZTools.Offline/WorkbookSession.cs;../ZTools.Standalone/Core/Vb.cs;../ZTools.Standalone/Core/TemplateResources.cs;../ZTools.Standalone/Core/ProjectWorkbook.cs;../ZTools.Standalone/Core/SubmissionEngine.cs;../ZTools.Standalone/Core/SectionSelection.cs;../ZTools.Standalone/Core/Generated/WorkbookCalculations.cs" Link="Shared/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="../Resources/Workbooks/ZTools.xls" LogicalName="ZTools.Templates.ZTools.xls" />
+    <EmbeddedResource Include="../Resources/Workbooks/Input.xls" LogicalName="ZTools.Templates.Input.xls" />
   </ItemGroup>
 </Project>

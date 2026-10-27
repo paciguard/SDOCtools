@@ -1,6 +1,8 @@
-"""Check saved mobile XLS VBA/OLE streams against the untouched source template."""
+"""Check input-only projects and preservation of the archived source workbook."""
 import hashlib
 import argparse
+import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -8,20 +10,18 @@ root = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(root / '.tools/python'))
 import olefile
 
-source = root/'Referrings/Ztools/ZTools.xls'
 parser = argparse.ArgumentParser()
 parser.add_argument('--workbook', type=Path, help='A saved private mobile workbook to verify')
 args = parser.parse_args()
 saved = args.workbook or Path((root/'tests/offline-output/last-workbook.txt').read_text(encoding='utf-8-sig'))
-with olefile.OleFileIO(source) as before, olefile.OleFileIO(saved) as after:
-    preserved = 0
-    for stream in before.listdir():
-        # BIFF values/formula caches and document summary properties may change;
-        # all other original streams (VBA, forms, controls, embedded data) must stay.
-        if stream[0] in {'Workbook', '\x05SummaryInformation', '\x05DocumentSummaryInformation'}:
-            continue
-        assert after.exists(stream), f'Missing original OLE stream: {stream}'
-        assert hashlib.sha256(before.openstream(stream).read()).digest() == hashlib.sha256(after.openstream(stream).read()).digest(), stream
-        preserved += 1
-    assert preserved > 0
-print(f'PASS {preserved} original VBA/form/OLE streams retained byte for byte after offline workbook updates')
+provenance = json.loads((root/'migration/workbook-split-20261026.json').read_text(encoding='utf-8'))
+assert hashlib.sha256((root/provenance['source']).read_bytes()).hexdigest() == provenance['sourceSha256']
+with olefile.OleFileIO(saved) as book:
+    assert book.exists('Workbook')
+    assert not any('VBA' in '/'.join(parts).upper() for parts in book.listdir())
+exe = root/'dist/CFL-SubmitTools/ZTools.Standalone.exe'
+result = subprocess.run([str(exe), '--verify-input', str(saved)], check=True, capture_output=True, text=True,
+                        creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
+info = json.loads(result.stdout)
+assert info['inputOnly'] and info['sheets'] == ['input'] and info['dropdowns'] >= 8
+print('PASS public XLS contains only input, retains dropdowns/project parameters, has no VBA, and the uploaded original is unchanged')

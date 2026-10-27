@@ -31,9 +31,9 @@ try{
         if(-not(Test-Path (Join-Path $install $asset))){throw "Installed asset is missing: $asset"}
     }
     $inventory=& $exe --verify-templates|ConvertFrom-Json
-    if($LASTEXITCODE -ne 0 -or @($inventory).Count -ne 4){throw 'Installed embedded templates could not be read.'}
+    if($LASTEXITCODE -ne 0 -or @($inventory).Count -ne 5){throw 'Installed embedded templates could not be read.'}
     foreach($asset in $inventory){
-        $relative=if($asset.name -eq 'ZTools.xls'){'Referrings\Ztools\ZTools.xls'}else{'Referrings\Ztools\TEMPLATE\'+$asset.name}
+        $relative=if($asset.name -in 'ZTools.xls','Input.xls'){'Resources\Workbooks\'+$asset.name}else{'Referrings\Ztools\TEMPLATE\'+$asset.name}
         if((Get-FileHash (Join-Path $root $relative)).Hash.ToLowerInvariant() -ne $asset.sha256){throw 'Installed template differs from the original.'}
     }
     $child=Start-Process -FilePath $exe -ArgumentList '--no-browser','--port','55195' -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $testRoot 'app.log') -RedirectStandardError (Join-Path $testRoot 'app.err')
@@ -45,7 +45,7 @@ try{
     if(-not $state.token -or $state.data.editing){throw 'Installed app did not open an idle session.'}
     & curl.exe --noproxy '*' --silent --fail --max-time 8 -H "X-CFL-Token: $($state.token)" -H 'Content-Type: application/json' --data '{}' 'http://127.0.0.1:55195/api/action/close'
     if($LASTEXITCODE -ne 0 -or -not $child.WaitForExit(15000)){throw 'Installed app did not close cleanly.'}
-    Write-Host 'PASS installed self-contained app starts and reads all four original embedded templates'
+    Write-Host 'PASS installed app starts and reads three original DWGs plus its model and input templates'
     $userFile=Join-Path $install 'user-project-preservation.txt'
     'User-created project data'|Set-Content $userFile
     $before=(Get-FileHash $userFile).Hash

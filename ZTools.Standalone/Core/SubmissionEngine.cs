@@ -56,6 +56,9 @@ namespace ZTools.Engine
                 ExcelApp.StatusBar = "凯乐工具：正在计算 " + count + " 台泵的数据";
                 report("正在查询泵的尺寸和重量数据……");
                 TransferData();
+                // TransferData refreshes the default grade from input. Restore
+                // the Sec-List formula or explicit user override before SEC work.
+                snapshots[3].Restore(Book);
                 report("正在重新计算工作簿公式……");
                 Book.Application.CalculateFull();
                 // Validate the list and finalize the material-dependent SEC block
@@ -146,10 +149,10 @@ namespace ZTools.Engine
             string listName = Get("Sheet1", row, 81); // CC
             string materialClass = Get("Sec-List", 10+k, 6);
             int listColumn = FindSectionListColumn(listName);
-            int materialColumn = FindHeader("List-detail", 2, 6, 16, Get("input", 21+k, 15));
+            int materialColumn = FindHeader("List-detail", 2, 6, 16, materialClass);
             if (listColumn < 0) throw new InvalidOperationException("Sheet1!CC" + row + " 返回的材料清单名“" + listName + "”在 List-all 第 2 行中不存在。请检查泵版本、轴承形式及轴承架号。");
-            if (materialColumn < 0) throw new InvalidOperationException("输入表第 " + (21+k) + " 行的材料等级在 List-detail 第 2 行中不存在。");
-            var overrides = new Dictionary<string, int> { { "210.01",7 }, { "940.01",8 }, { "230.01",9 }, { "503.01",10 }, { "503.02",10 }, { "502.01",11 }, { "502.02",11 }, { "922.01",12 }, { "525.02",13 } };
+            if (materialColumn < 0) throw new InvalidOperationException("Sec-List!F" + (10+k) + " 的材质等级“" + materialClass + "”在 List-detail 第 2 行中不存在。");
+            var overrides = new Dictionary<string, int> { { "210.01",7 }, { "940.01",8 }, { "230.01",9 }, { "503.01",10 }, { "503.02",10 }, { "502.01",11 }, { "502.02",11 }, { "922.01",12 }, { "525.02",13 }, { "330.01",15 }, { "330.02",15 }, { "330.03",15 } };
             dynamic listSheet = Book.Worksheets["List-all"];
             var listData = (object[,])listSheet.Range[listSheet.Cells[3,listColumn],listSheet.Cells[54,listColumn]].Value2;
             var detailData = (object[,])Book.Worksheets["List-detail"].Range["C3:Q153"].Value2;
@@ -168,7 +171,7 @@ namespace ZTools.Engine
                 if (!detailRows.TryGetValue(PartKey(number),out detailRow)) throw new InvalidOperationException("List-detail 中缺少零件：" + number);
                 string material = Vb.Text(detailData[detailRow,materialColumn-2]);
                 int overrideCol;
-                if (overrides.TryGetValue(number, out overrideCol) && Get("Sec-List", 10+k, overrideCol) != "") material = Get("Sec-List", 10+k, overrideCol);
+                if (overrides.TryGetValue(PartKey(number), out overrideCol) && Get("Sec-List", 10+k, overrideCol) != "") material = Get("Sec-List", 10+k, overrideCol);
                 parts.Add(new object[] { number, Vb.Text(detailData[detailRow,2]), material, Vb.Text(detailData[detailRow,3]) });
             }
             string pump = Get("Sheet1",row,3).Substring(0,2);
@@ -177,7 +180,7 @@ namespace ZTools.Engine
             {
                 object[] shaft = parts.FirstOrDefault(p => Vb.Text(p[0]).StartsWith("210", StringComparison.Ordinal));
                 string shaftMaterial = shaft == null ? "" : Vb.Text(shaft[2]);
-                string cls = Get("input",21+k,15);
+                string cls = materialClass;
                 sleeve = (shaftMaterial.Contains("Cr13") || shaftMaterial == "A276 Type 420") && (cls.Contains("A-7") || cls.Contains("D") || cls.Contains("A-8"));
                 parts.RemoveAll(p => Vb.Text(p[0]) == (sleeve ? "525.02" : "400.03"));
             }

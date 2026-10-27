@@ -8,7 +8,7 @@ var folder=args.Length>0?args[0]:"tests/offline-output";
 var app=new OfflineProject(folder);
 app.Create();
 app.AddEquipment();app.RemoveEquipment(6);
-foreach(var group in new[]{"project","equipment","motor","pid","materials"})
+foreach(var group in new[]{"project","equipment","motor","pid","materials","utility"})
 {
     var form=app.Parameters(group,0);Console.WriteLine($"PASS {group}: {form.Fields.Count} fields, {form.Fields.Count(f=>f.Choices.Length>0)} choice lists");
 }
@@ -27,6 +27,51 @@ if(MobileBridge.Scripts(19,sceneReply).Count()<2)throw new Exception("Large mobi
 foreach(var file in app.Files())foreach(var format in new[]{"dwg","pdf","scene.json"})if(new FileInfo(app.File(file.Id,format)).Length==0)throw new Exception("Empty output");
 System.IO.File.WriteAllText(Path.Combine(folder,"last-workbook.txt"),app.Workbook);
 Console.WriteLine("OFFLINE_SMOKE_OK "+app.Workbook);
+
+var housingStorage=Path.Combine(folder,"bearing-house-regression");
+var housing=new OfflineProject(housingStorage);housing.Create();
+housing.SaveParameters("materials",0,new[]{new InputChange("Sec-List","O10","BH-330-CHECK")});
+var savedId=Path.GetFileName(Path.GetDirectoryName(housing.Workbook));
+housing=new OfflineProject(housingStorage);housing.Open(savedId);
+if(housing.Parameters("materials",0).Fields.Single(f=>f.Address=="O10").Value!="BH-330-CHECK")throw new Exception("Bearing-house input did not survive project reopen");
+housing.Calculate();housing.Generate(new[]{"SEC"},new[]{0});
+var housingDrawing=DwgReader.Read(housing.File(0,"dwg"));
+if(!housingDrawing.Entities.OfType<Insert>().SelectMany(i=>i.Attributes).Any(a=>a.Value=="BH-330-CHECK"))throw new Exception("Saved SEC DWG did not contain the bearing-house material override");
+if(!housing.Scene(0).Contains("BH-330-CHECK"))throw new Exception("SEC PDF scene did not contain the bearing-house material override");
+using(var session=new WorkbookSession(housing.Workbook))
+{
+    new SubmissionEngine(session,_=>{}).PrepareSection(0);int houses=0;
+    for(int r=72;r<=123;r++)if(new[]{"330.01","330.02","330.03"}.Contains(session.Cell("Sheet1","DB"+r)))
+    {houses++;if(session.Cell("Sheet1","DD"+r)!="BH-330-CHECK")throw new Exception("SEC material list did not apply the bearing-house material");}
+    if(houses==0)throw new Exception("Bearing-house regression list contains no bearing-house parts");
+}
+using(var source=TemplateResources.Open("ZTools.xls"))using(var internalModel=new NPOI.HSSF.UserModel.HSSFWorkbook(source,true))
+    if(internalModel.GetSheet("map")!=null||internalModel.GetSheet("List-detail")==null)throw new Exception("Embedded model must remove map and retain the material database");
+using(var saved=System.IO.File.OpenRead(housing.Workbook))using(var publicProject=new NPOI.HSSF.UserModel.HSSFWorkbook(saved,true))
+{
+    if(publicProject.NumberOfSheets!=1||publicProject.GetSheetName(0)!="input")throw new Exception("Public project exposes internal data sheets");
+    if(publicProject.GetSheet("input").GetDataValidations().Count<8)throw new Exception("Input-only workbook lost its dropdowns");
+}
+string originalGrade=housing.Parameters("equipment",0).Fields.Single(f=>f.Address=="O21").Value;
+string sectionGrade=housing.Parameters("materials",0).Fields.Single(f=>f.Address=="F10").Choices.First(g=>g!=originalGrade);
+housing.SaveParameters("materials",0,new[]{new InputChange("Sec-List","F10",sectionGrade)});
+housing.Calculate();
+using(var session=new WorkbookSession(housing.Workbook))
+{
+    if(session.Cell("input","O21")!=originalGrade||session.Cell("Sec-List","F10")!=sectionGrade||session.Cell("Sheet1","CE40")!=sectionGrade)
+        throw new Exception("Explicit Sec-List grade was overwritten by the input grade");
+    new SubmissionEngine(session,_=>{}).PrepareSection(0);
+    int gradeColumn=Enumerable.Range(6,11).Single(c=>session.Cell("List-detail",NPOI.SS.Util.CellReference.ConvertNumToColString(c-1)+"2")==sectionGrade);
+    int shaftRow=Enumerable.Range(3,151).First(r=>session.Cell("List-detail","C"+r)=="210.01");
+    string expected=session.Cell("List-detail",NPOI.SS.Util.CellReference.ConvertNumToColString(gradeColumn-1)+shaftRow);
+    int outputRow=Enumerable.Range(72,52).Single(r=>session.Cell("Sheet1","DB"+r)=="210.01");
+    if(session.Cell("Sheet1","DD"+outputRow)!=expected)throw new Exception("SEC material list ignored the explicit Sec-List grade");
+}
+Console.WriteLine("PASS explicit Sec-List grade survives calculation and selects shaft material from the embedded database");
+housing.SaveParameters("materials",0,new[]{new InputChange("Sec-List","N10","UNSUPPORTED-BEARING")});
+bool rejectedHousingType=false;try{housing.Calculate();}catch(InvalidOperationException){rejectedHousingType=true;}
+if(!rejectedHousingType)throw new Exception("Sec-List bearing type was ignored by SEC selection");
+Console.WriteLine("INPUT_ONLY_AND_BEARING_HOUSE_OK persisted overrides, map-free embedded data, input dropdowns, SEC list/DWG/PDF scene, and bearing-type validation");
 
 // Mixed editions exercise the same shared calculation rules used on Windows.
 var seventh=new OfflineProject(Path.Combine(folder,"ze7-regression"));seventh.Create();

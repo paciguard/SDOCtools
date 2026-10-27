@@ -1,0 +1,15 @@
+{
+  "source": "Referrings/Updates/ZTools-20261026.xls",
+  "sourceSha256": "f882d880a886e3735a0f21ff6790104192909c26b1856a546957c4bc422b161f",
+  "embedded": "Resources/Workbooks/ZTools.xls",
+  "embeddedSha256": "894e9af716a351021c3d30aa73489d8cc2522edcd3c707641fa604e78634a0e4",
+  "inputTemplate": "Resources/Workbooks/Input.xls",
+  "inputTemplateSha256": "8139aec36ee13aab1f681c9929d8993fc8045d86993472ce4152523bc961aafe",
+  "inputSheets": [
+    "input"
+  ],
+  "removedSheets": [
+    "map"
+  ],
+  "bearingHouse": "Sec-List!O10:O39"
+}

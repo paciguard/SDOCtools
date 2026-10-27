@@ -37,7 +37,7 @@ internal static class WorkbookSmoke
             string job = ProjectPaths.CreateJob(parent);
             using (var session = new WorkbookSession(Path.Combine(job,"ZTools.xls"),false))
             {
-                Check(session.Book.Worksheets.Count == 20, "All 20 template and database sheets preserved");
+                Check(session.Book.Worksheets.Count == 19, "Private working model retains the 19 internal/input sheets and omits map");
                 var engine = new SubmissionEngine(session,Console.WriteLine);
                 int count = engine.Calculate();
                 Check(count == 6, "Six supplied input pump rows calculated");

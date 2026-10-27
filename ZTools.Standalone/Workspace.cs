@@ -5,7 +5,7 @@ using ZTools.Engine;
 
 namespace ZTools.Standalone;
 
-public sealed record CellField(string Sheet,string Address,string Label,string Value,string[] Choices);
+public sealed record CellField(string Sheet,string Address,string Label,string Value,string[] Choices,bool ReadOnly=false);
 public sealed record ParameterForm(string Title,List<CellField> Fields);
 public sealed record CellChange(string Sheet,string Address,string Value);
 public sealed record ActionRequest(string Path=null,string Sheet=null,string Group=null,int Row=0,string[] Kinds=null,int[] Rows=null,CellChange[] Changes=null,SheetOptions Options=null);
@@ -55,13 +55,15 @@ public sealed class Workspace:IDisposable
     }
     public object Select(string path)
     {
-        EnsureIdle();if(string.IsNullOrEmpty(path)){using var picker=new OpenFileDialog{Title="打开项目 Excel 副本",Filter="项目工作簿|ZTools.xls"};if(ProjectDialog.Show(picker)!=DialogResult.OK)return State();path=picker.FileName;}
+        EnsureIdle();if(string.IsNullOrEmpty(path)){using var picker=new OpenFileDialog{Title="打开 input 项目工作簿",Filter="Excel 输入项目 (*.xls)|*.xls"};if(ProjectDialog.Show(picker)!=DialogResult.OK)return State();path=picker.FileName;}
         path=Path.GetFullPath(path);if(ProjectPaths.IsSourceWorkbook(path))throw new InvalidOperationException("请打开项目副本。原始模板通过“新建项目”完整复制后使用。");
+        string selected=path;path=ProjectWorkbook.ImportLegacy(path);
         using(var test=new WorkbookSession(path,false)) { }
-        workbookPath=path;LastOutput=null;needsCalculation=true;notice=null;Report("已打开项目："+path);return State(true);
+        workbookPath=path;LastOutput=null;needsCalculation=true;notice=path==selected?null:"已将旧版工作簿导入为仅含 input 的项目副本，原文件未修改。";Report("已打开项目："+path);return State(true);
     }
     public object Edit(string sheet)
     {
+        if(sheet!="input")throw new InvalidOperationException("内部工作表请使用“剖面材料”“管仪参数”或“公用工程参数”窗口查看和修改。");
         EnsureIdle();if(!new[]{"input","PID","Sec-List","Sheet1","Utility"}.Contains(sheet))throw new InvalidOperationException("无效的编辑工作表。");
         if(workbookPath==null)throw new InvalidOperationException("请先新建或打开项目。");
         var opened=new WorkbookSession(workbookPath,true);
@@ -124,16 +126,18 @@ public sealed class Workspace:IDisposable
         void Field(string sheet,string col,int row,string label)
         {
             dynamic cell=book.Book.Worksheets[sheet].Range[col+row];var choices=new List<string>();
+            string choicesSheet=sheet;dynamic choicesCell=cell;
+            if(sheet=="Sec-List"&&(col=="F"||col=="N")){choicesSheet="input";choicesCell=book.Book.Worksheets["input"].Range[(col=="F"?"O":"AA")+(row+11)];}
             try
             {
-                if(Vb.Int(cell.Validation.Type)==3)
+                if(Vb.Int(choicesCell.Validation.Type)==3)
                 {
-                    string formula=Vb.Text(cell.Validation.Formula1);
+                    string formula=Vb.Text(choicesCell.Validation.Formula1);
                     if(formula.StartsWith("="))
                     {
                         // Resolve validation on the owning sheet so relative names
                         // and INDIRECT formulas keep the original workbook context.
-                        dynamic result=book.Book.Worksheets[sheet].Evaluate(formula);
+                        dynamic result=book.Book.Worksheets[choicesSheet].Evaluate(formula);
                         object values=Marshal.IsComObject(result)?result.Value2:result;
                         if(values is Array array)foreach(var value in array)choices.Add(Vb.Text(value));else choices.Add(Vb.Text(values));
                     }
@@ -141,7 +145,8 @@ public sealed class Workspace:IDisposable
                 }
             }
             catch(Exception ex) when(ex is COMException or ArgumentException) { }
-            fields.Add(new(sheet,col+row,label,Vb.Text(cell.Value2),choices.Where(s=>!string.IsNullOrWhiteSpace(s)).Distinct().Take(2500).ToArray()));
+            bool readOnly=(bool)cell.HasFormula&&!(sheet=="Sec-List"&&(col=="F"||col=="N"));
+            fields.Add(new(sheet,col+row,label,Vb.Text(cell.Value2),choices.Where(s=>!string.IsNullOrWhiteSpace(s)).Distinct().Take(2500).ToArray(),readOnly));
         }
         string title;
         switch(group)
@@ -153,14 +158,20 @@ public sealed class Workspace:IDisposable
             case "pid":
                 title="管仪参数";foreach(var col in new[]{"F","G","H","I"})Field("PID",col,10+index,book.Cell("PID",col+"8"));foreach(var col in new[]{"Y","Z"})Field("input",col,21+index,book.Cell("input",col+"19"));break;
             case "materials":
-                title="剖面材料选择";foreach(var col in new[]{"F","G","H","I","J","K","L","M"})Field("Sec-List",col,10+index,book.Cell("Sec-List",col+"8"));break;
+                title="剖面与材料清单参数";foreach(var col in new[]{"F","G","H","I","J","K","L","M","N","O"})Field("Sec-List",col,10+index,col=="O"?"轴承架材质（330.01 / 330.02 / 330.03）":book.Cell("Sec-List",col+"8"));break;
+            case "utility":
+                title="公用工程参数";foreach(var col in new[]{"E","F","G","H","I","J","K"})Field("Utility",col,13+index,book.Cell("Utility",col+"12"));break;
+            case "project":
+                title="项目与计算设置";foreach(var (address,label) in new[]{("F10","客户名称"),("F11","项目名称"),("F12","用户订货号"),("F13","公司订货号"),("L12","设计 / 编制"),("L13","审核")})Field("input",new string(address.TakeWhile(char.IsLetter).ToArray()),int.Parse(new string(address.SkipWhile(char.IsLetter).ToArray())),label);Field("input","I",53,"法兰标准");Field("input","I",56,"管口载荷系数");break;
+            case "results":
+                title="内部计算结果";foreach(var (col,label) in new[]{("B","设备位号"),("C","泵型号"),("CA","SEC 剖面图块"),("CB","轴承形式"),("CC","材料清单名称"),("CE","剖面材质等级"),("CF","轴套标记")}){Field("Sheet1",col,40+index,label);fields[^1]=fields[^1] with{ReadOnly=true};}break;
             default:throw new InvalidOperationException("未知参数窗口。");
         }
         return new(title,fields);
     }
     public object SaveParameters(string group,int row,CellChange[] changes)
     {
-        var allowed=Parameters(group,row).Fields.Select(f=>f.Sheet+"!"+f.Address).ToHashSet();
+        var allowed=Parameters(group,row).Fields.Where(f=>!f.ReadOnly).Select(f=>f.Sheet+"!"+f.Address).ToHashSet();
         if(changes==null||changes.Any(c=>!allowed.Contains(c.Sheet+"!"+c.Address)))throw new InvalidOperationException("参数地址无效。");
         using(var book=Open())
         {
@@ -176,11 +187,11 @@ public sealed class Workspace:IDisposable
             }
             catch {for(int i=0;i<changes.Length;i++)book.Book.Worksheets[changes[i].Sheet].Range[changes[i].Address].Formula=previous[i];throw;}
         }
-        if(changes.Any(c=>c.Sheet=="input"))needsCalculation=true;
-        Report("参数已保存到项目 Excel；更改输入后请重新计算。");return State(true);
+        needsCalculation=true;
+        Report("项目参数已保存；内部参数随 input 项目文件保留，请重新计算后出图。");return State(true);
     }
     internal static SheetOptions ReadOptions(WorkbookSession book)
-    {try{return JsonSerializer.Deserialize<SheetOptions>(Vb.Text((object)book.Book.CustomDocumentProperties["CFL_PrintSettings"].Value))??new SheetOptions();}catch(Exception ex) when(ex is COMException or ArgumentException){return new();}}
+    {try{string value=Vb.Text((object)book.Book.CustomDocumentProperties["CFL_PrintSettings"].Value);return string.IsNullOrWhiteSpace(value)?new():JsonSerializer.Deserialize<SheetOptions>(value)??new SheetOptions();}catch(Exception ex) when(ex is COMException or ArgumentException){return new();}}
     public object SaveOptions(SheetOptions options)
     {
         options.Validate();using(var book=Open())

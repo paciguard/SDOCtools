@@ -26,7 +26,7 @@ public sealed partial class OfflineProject
     public object Create()
     {
         string dir=Path.Combine(storage,"项目-"+DateTime.Now.ToString("yyyyMMdd-HHmmss")+"-"+Guid.NewGuid().ToString("N")[..6]);Directory.CreateDirectory(dir);
-        workbook=Path.Combine(dir,"ZTools.xls");using(var source=TemplateResources.Open("ZTools.xls"))using(var copy=System.IO.File.Create(workbook))source.CopyTo(copy);
+        workbook=Path.Combine(dir,"ZTools.xls");ProjectWorkbook.Create(workbook);
         Reset();Report("项目已从内置 Excel 模板创建。");return State();
     }
     public object Open(string id)
@@ -38,7 +38,7 @@ public sealed partial class OfflineProject
     {
         string dir=Path.Combine(storage,"导入-"+DateTime.Now.ToString("yyyyMMdd-HHmmss")+"-"+Guid.NewGuid().ToString("N")[..6]);Directory.CreateDirectory(dir);
         string file=Path.Combine(dir,"ZTools.xls");using(var copy=System.IO.File.Create(file)){byte[] buffer=new byte[81920];int count;long total=0;while((count=input.Read(buffer))>0){total+=count;if(total>20*1024*1024)throw new InvalidOperationException("项目文件不能超过 20 MB。");copy.Write(buffer,0,count);}}
-        using(var validation=new WorkbookSession(file)){}workbook=file;Reset();return State();
+        using(var validation=new WorkbookSession(file)){validation.Save();}workbook=file;Reset();return State();
     }
     void Reset(){output=null;needsCalculation=true;log.Clear();}
     public object AddEquipment()
@@ -68,7 +68,7 @@ public sealed partial class OfflineProject
     }
     static void CopyEquipment(ExcelBook source,int from,ExcelBook target,int to)
     {
-        foreach(var (sheet,offset,start,end) in new[]{("input",21,4,30),("PID",10,6,9),("Sec-List",10,6,13)})
+        foreach(var (sheet,offset,start,end) in new[]{("input",21,4,30),("PID",10,6,9),("Sec-List",10,6,15)})
         for(int col=start;col<=end;col++)
         {
             var src=source.Data.GetSheet(sheet).GetRow(offset+from-1)?.GetCell(col-1);var dest=target.Data.GetSheet(sheet).GetRow(offset+to-1)?.GetCell(col-1);
@@ -92,7 +92,7 @@ public sealed partial class OfflineProject
     public ParameterForm Parameters(string group,int index)
     {
         if(index<0||index>=30)throw new ArgumentOutOfRangeException(nameof(index));using var b=Book();var fields=new List<InputField>();
-        void Field(string sheet,string address,string label){var point=new CellReference(address);var source=((ExcelBook)b.Book).Data.GetSheet(sheet).GetRow(point.Row)?.GetCell(point.Col);bool readOnly=source?.CellType==NPOI.SS.UserModel.CellType.Formula;string value=b.Cell(sheet,address);if(source!=null&&(source.CellType==NPOI.SS.UserModel.CellType.Numeric||(source.CellType==NPOI.SS.UserModel.CellType.Formula&&source.CachedFormulaResultType==NPOI.SS.UserModel.CellType.Numeric))&&NPOI.SS.UserModel.DateUtil.IsCellDateFormatted(source))value=((ExcelBook)b.Book).Formatter.FormatCellValue(source,((ExcelBook)b.Book).Evaluator);fields.Add(new(sheet,address,string.IsNullOrWhiteSpace(label)?address:label,value,Choices((ExcelBook)b.Book,sheet,address),readOnly));}
+        void Field(string sheet,string address,string label){var point=new CellReference(address);var source=((ExcelBook)b.Book).Data.GetSheet(sheet).GetRow(point.Row)?.GetCell(point.Col);bool readOnly=source?.CellType==NPOI.SS.UserModel.CellType.Formula&&!(sheet=="Sec-List"&&(point.Col==5||point.Col==13));string value=b.Cell(sheet,address);if(source!=null&&(source.CellType==NPOI.SS.UserModel.CellType.Numeric||(source.CellType==NPOI.SS.UserModel.CellType.Formula&&source.CachedFormulaResultType==NPOI.SS.UserModel.CellType.Numeric))&&NPOI.SS.UserModel.DateUtil.IsCellDateFormatted(source))value=((ExcelBook)b.Book).Formatter.FormatCellValue(source,((ExcelBook)b.Book).Evaluator);fields.Add(new(sheet,address,string.IsNullOrWhiteSpace(label)?address:label,value,Choices((ExcelBook)b.Book,sheet=="Sec-List"&&(point.Col==5||point.Col==13)?"input":sheet,sheet=="Sec-List"&&(point.Col==5||point.Col==13)?(point.Col==5?"O":"AA")+(point.Row+12):address),readOnly));}
         string title;
         switch(group)
         {
@@ -100,7 +100,8 @@ public sealed partial class OfflineProject
             case "equipment":title="设备参数";foreach(string col in new[]{"D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","X","Y","Z","AA","AB","AC","AD"})Field("input",col+(21+index),b.Cell("input",col+"19"));break;
             case "motor":title="电机与底座";foreach(string col in new[]{"S","T","U","V","W"})Field("input",col+(21+index),b.Cell("input",col+"19"));break;
             case "pid":title="管仪参数";foreach(string col in new[]{"F","G","H","I"})Field("PID",col+(10+index),b.Cell("PID",col+"8"));foreach(string col in new[]{"Y","Z"})Field("input",col+(21+index),b.Cell("input",col+"19"));break;
-            case "materials":title="剖面材料";foreach(string col in new[]{"F","G","H","I","J","K","L","M"})Field("Sec-List",col+(10+index),b.Cell("Sec-List",col+"8"));break;
+            case "materials":title="剖面与材料清单参数";foreach(string col in new[]{"F","G","H","I","J","K","L","M","N","O"})Field("Sec-List",col+(10+index),col=="O"?"轴承架材质（330.01 / 330.02 / 330.03）":b.Cell("Sec-List",col+"8"));break;
+            case "utility":title="公用工程参数";foreach(string col in new[]{"E","F","G","H","I","J","K"})Field("Utility",col+(13+index),b.Cell("Utility",col+"12"));break;
             default:throw new ArgumentException("未知参数窗口。");
         }
         return new(title,fields);
@@ -131,7 +132,7 @@ public sealed partial class OfflineProject
             {
                 if(c.Value?.TrimStart().StartsWith('=')==true)throw new ArgumentException("请输入参数值，不要输入公式。");
                 var target=new CellReference(c.Address);var current=((ExcelBook)b.Book).Data.GetSheet(c.Sheet).GetRow(target.Row)?.GetCell(target.Col);
-                if(current?.CellType==NPOI.SS.UserModel.CellType.Formula)throw new InvalidOperationException("此单元格包含公式，请修改其输入参数："+c.Address);
+                if(current?.CellType==NPOI.SS.UserModel.CellType.Formula&&!(c.Sheet=="Sec-List"&&(target.Col==5||target.Col==13)))throw new InvalidOperationException("此单元格包含公式，请修改其输入参数："+c.Address);
                 b.Book.Worksheets[c.Sheet].Range[c.Address].Value2=current?.CellType!=NPOI.SS.UserModel.CellType.String&&double.TryParse(c.Value,NumberStyles.Float,CultureInfo.InvariantCulture,out double number)?(object)number:c.Value;
             }
             b.Save();
@@ -140,12 +141,12 @@ public sealed partial class OfflineProject
     }
     internal static SheetOptions ReadOptions(WorkbookSession b)
     {
-        var sheet=((ExcelBook)b.Book).Data.GetSheet("CFL-App");string value=sheet?.GetRow(0)?.GetCell(0)?.StringCellValue;
+        var data=((ExcelBook)b.Book).Data;var sheet=data.GetSheet("CFL-App");string value=Convert.ToString(data.DocumentSummaryInformation?.CustomProperties?.Get("CFL_PrintSettings"));if(string.IsNullOrEmpty(value))value=sheet?.GetRow(0)?.GetCell(0)?.StringCellValue;
         return value==null?new():JsonSerializer.Deserialize<SheetOptions>(value)??new();
     }
     public object SaveOptions(SheetOptions options)
     {
-        options.Validate();using(var b=Book()){var data=((ExcelBook)b.Book).Data;var sheet=data.GetSheet("CFL-App")??data.CreateSheet("CFL-App");(sheet.GetRow(0)??sheet.CreateRow(0)).CreateCell(0).SetCellValue(JsonSerializer.Serialize(options));data.SetSheetHidden(data.GetSheetIndex(sheet),true);b.Save();}return State();
+        options.Validate();using(var b=Book()){var data=((ExcelBook)b.Book).Data;if(data.DocumentSummaryInformation==null)data.CreateInformationProperties();var properties=data.DocumentSummaryInformation.CustomProperties??new NPOI.HPSF.CustomProperties();properties.Put("CFL_PrintSettings",JsonSerializer.Serialize(options));data.DocumentSummaryInformation.CustomProperties=properties;b.Save();}return State();
     }
     public object Generate(string[] kinds,int[] rows)
     {

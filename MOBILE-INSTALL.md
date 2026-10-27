@@ -1,6 +1,6 @@
 # Android and iPhone offline application
 
-The mobile projects are native C# Android and iOS hosts containing the Chinese CFL interface, Three.js viewer and a shared offline calculation/drawing engine. They do not connect to a Windows computer or start Excel. All three DWGs, the complete original XLS workbook and a licensed Chinese PDF font are embedded. Projects remain XLS workbooks, including their database sheets and VBA streams; macros are preserved but never executed. Mobile forms edit input values and retain formulas. The Windows application remains a separate project.
+The mobile projects are native C# Android and iOS hosts containing the Chinese CFL interface, Three.js viewer and a shared offline calculation/drawing engine. They do not connect to a Windows computer or start Excel. All three DWGs, the complete original XLS workbook and a licensed Chinese PDF font are embedded. Public projects are XLS workbooks containing only `input`; internal form values and results travel in document properties. Database/calculation worksheets are reconstructed from the embedded model. The derived model removes `map`; public exports contain no VBA, and original source workbooks remain archived unchanged. Mobile forms edit input values and internal PID/Sec-List/Utility parameters. Sec-List bearing-house material overrides parts 330.01/330.02/330.03 in generated SEC output. The Windows application remains a separate project.
 
 ## Android installer
 
