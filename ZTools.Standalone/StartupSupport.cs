@@ -45,7 +45,21 @@ internal static class StartupSupport
 
     internal static void OpenBrowser(string url)
     {
-        try{Process.Start(new ProcessStartInfo(url){UseShellExecute=true});}
+        try
+        {
+            // The WebGL viewer needs a modern browser even when Windows has an
+            // obsolete or broken default HTTP association (such as IE).
+            string edge=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),"Microsoft","Edge","Application","msedge.exe");
+            if(File.Exists(edge))
+            {
+                var start=new ProcessStartInfo(edge){UseShellExecute=false};
+                string profile=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"CFL","SubmitTools","EdgeProfile");
+                start.ArgumentList.Add("--user-data-dir="+profile);
+                start.ArgumentList.Add(url);
+                Process.Start(start);
+            }
+            else Process.Start(new ProcessStartInfo(url){UseShellExecute=true});
+        }
         catch(Exception ex){Log(ex);MessageBox.Show("程序已启动，请在浏览器中打开：\n"+url,"凯乐提交文件工具",MessageBoxButtons.OK,MessageBoxIcon.Information);}
     }
 

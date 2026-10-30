@@ -12,6 +12,8 @@ Requires Windows x64, Microsoft Excel desktop, a WebGL-capable browser, and the 
 
 Run `powershell -ExecutionPolicy Bypass -File tools/build.ps1`, then launch `dist/CFL-SubmitTools/Start.ps1` or `ZTools.Standalone.exe` inside that published folder. Keep the complete application folder, including its libraries and `wwwroot`. GA.dwg, PID.dwg, SEC.dwg and the complete ZTools.xls input/database template are embedded in the application assembly; no external business-template files or `Referrings` folder are needed at runtime. The interface opens at http://127.0.0.1:5099. Third-party JavaScript is bundled locally; drawing generation does not require an internet connection.
 
+On Windows, startup opens Microsoft Edge when installed, since the drawing viewer requires a modern WebGL browser. Otherwise it uses the Windows default browser. Internet Explorer is not supported.
+
 Repeated launches reopen the current application and preserve its project session. The build script closes an idle running copy of the same output folder before replacing its files. If Excel is open for input, save and return to the workbench first; rebuild will refuse to interrupt editing.
 
 In Visual Studio 2022, open `ZTools.sln`, set `ZTools.Standalone` as the startup project, and run its **ZTools.Standalone** profile. That profile uses http://127.0.0.1:5100 so it can run alongside the published application. Regular build output includes the embedded templates and `wwwroot`; keep the whole output folder together. If startup fails, the app shows a Chinese error and writes `application-error.log` beside the executable (or under `%LOCALAPPDATA%/CFL/SubmitTools` if the folder is not writable). Custom addresses use `--port <number>`; close those instances with **退出程序** before rebuilding.
