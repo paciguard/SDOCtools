@@ -42,7 +42,7 @@ public sealed class MobileController:UIViewController,IWKScriptMessageHandler
             }
             else if(command=="export")
             {
-                string format=data.GetProperty("format").GetString();string file=format=="xls"?bridge.Project.Workbook:bridge.Project.File(data.GetProperty("id").GetInt32(),format);
+                string format=data.GetProperty("format").GetString();string file=format is "xlsx" or "xls"?bridge.Project.Workbook:bridge.Project.File(data.GetProperty("id").GetInt32(),format);
                 if(file==null)throw new InvalidOperationException("请先打开项目。");if(await Pick(file)==null)throw new InvalidOperationException("已取消导出。");result=new{saved=true};
             }
             else result=await Task.Run(()=>bridge.Dispatch(command,data));reply=MobileBridge.Reply(id,result);

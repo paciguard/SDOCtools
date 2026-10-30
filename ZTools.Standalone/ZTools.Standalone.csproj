@@ -6,15 +6,22 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>disable</Nullable>
     <NoWarn>$(NoWarn);CS0219;CA1416;NETSDK1138</NoWarn>
+    <BuildWindowsSetupOnRebuild Condition="'$(BuildWindowsSetupOnRebuild)' == ''">true</BuildWindowsSetupOnRebuild>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../ZTools.Calculation/ZTools.Calculation.csproj" Aliases="PortableCalculation" />
     <PackageReference Include="ACadSharp" Version="3.8.0" />
     <PackageReference Include="PDFsharp-GDI" Version="6.2.4" />
     <Content Update="wwwroot\**\*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
-    <EmbeddedResource Include="..\Referrings\Ztools\TEMPLATE\GA.dwg;..\Referrings\Ztools\TEMPLATE\PID.dwg;..\Referrings\Ztools\TEMPLATE\SEC.dwg;..\Referrings\Ztools\ZTools.xls" LogicalName="ZTools.Templates.%(Filename)%(Extension)" />
+    <EmbeddedResource Include="..\Referrings\Ztools\TEMPLATE\GA.dwg;..\Referrings\Ztools\TEMPLATE\PID.dwg;..\Referrings\Ztools\TEMPLATE\SEC.dwg;..\Resources\Workbooks\ZTools.xls" LogicalName="ZTools.Templates.%(Filename)%(Extension)" />
+    <EmbeddedResource Include="..\Resources\Workbooks\Input.xlsx" LogicalName="ZTools.Templates.Input.xlsx" />
   </ItemGroup>
   <Target Name="CloseOwnApplicationBeforeBuild" BeforeTargets="CoreClean;PrepareForBuild" Condition="'$(DesignTimeBuild)' != 'true' and '$(OS)' == 'Windows_NT'">
     <Exec Command="powershell.exe -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\..\tools\prepare-build.ps1&quot; -OutputDirectory &quot;$(TargetDir).&quot;" />
+  </Target>
+  <Target Name="CreateWindowsSetupAfterRebuild" AfterTargets="Rebuild"
+          Condition="'$(BuildWindowsSetupOnRebuild)' == 'true' and '$(DesignTimeBuild)' != 'true' and '$(OS)' == 'Windows_NT'">
+    <Message Importance="high" Text="Creating the Windows setup package from the rebuilt project..." />
+    <Exec Command="powershell.exe -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\..\tools\build-setup.ps1&quot; -Configuration &quot;$(Configuration)&quot; -Version &quot;$(Version)&quot; -InnoSetupCompiler &quot;$(InnoSetupCompiler)&quot;" />
   </Target>
 </Project>

@@ -19,6 +19,16 @@ public sealed class CadAdapter
     public CadLayers Layers => new(this);
     public void SetCustomProperty(object name,object value) { if(!string.IsNullOrWhiteSpace(Vb.Text(name)))Document.SummaryInfo.Properties[Vb.Text(name)]=Vb.Text(value); }
     internal static XYZ Point(object value) { var p=(double[])value;return new XYZ(p[0],p[1],p.Length>2?p[2]:0); }
+    internal static Transform BlockTransform(Insert insert)
+    {
+        // Block geometry is relative to its base point; attributes live in
+        // the owning space after this placement has been applied once.
+        return new Transform(Matrix4.GetArbitraryAxis(insert.Normal)
+            * Transform.CreateTranslation(insert.InsertPoint).Matrix
+            * Transform.CreateRotation(XYZ.AxisZ,insert.Rotation).Matrix
+            * Transform.CreateScaling(new XYZ(insert.XScale,insert.YScale,insert.ZScale)).Matrix
+            * Transform.CreateTranslation(XYZ.Zero-insert.Block.BlockEntity.BasePoint).Matrix);
+    }
 }
 public sealed class CadSpace
 {
@@ -38,7 +48,16 @@ public sealed class CadSpace
         string key=Vb.Text(name);if(string.IsNullOrWhiteSpace(key)||key=="NONONONO")return null;
         if(!cad.Document.BlockRecords.TryGetValue(key,out var block))throw new InvalidOperationException("模板缺少图块："+key);
         var insert=new Insert(block) {InsertPoint=CadAdapter.Point(point),XScale=Vb.Num(sx),YScale=Vb.Num(sy),ZScale=Vb.Num(sz),Rotation=Vb.Num(angle)};
-        cad.Document.Entities.Add(insert);insert.UpdateAttributes();return new CadItem(insert);
+        cad.Document.Entities.Add(insert);
+        // Create attributes from definitions after all placement values are
+        // known, including rotation, scale and a nonzero block base point.
+        insert.Attributes.Clear();var transform=CadAdapter.BlockTransform(insert);
+        foreach(var definition in block.AttributeDefinitions)
+        {
+            var attribute=new AttributeEntity(definition);attribute.ApplyTransform(transform);
+            insert.Attributes.Add(attribute);
+        }
+        return new CadItem(insert);
     }
 }
 public sealed class CadItem

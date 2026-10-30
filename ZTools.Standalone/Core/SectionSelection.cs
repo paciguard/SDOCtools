@@ -64,15 +64,15 @@ namespace ZTools.Engine
             if (model.StartsWith("CZ",StringComparison.OrdinalIgnoreCase))
                 czSize = Vb.Text(ExcelApp.WorksheetFunction.VLookup(model,Book.Worksheets["CZ-BearingSize"].Range["A2:B41"],2,false));
             SectionSelection selection;
-            try { selection = SectionSelection.Resolve(model,Get("input",21+k,5),Get("input",21+k,27),czSize); }
-            catch (InvalidOperationException ex) { throw new InvalidOperationException("输入表第 " + (21+k) + " 行：" + ex.Message,ex); }
+            try { selection = SectionSelection.Resolve(model,Get("input",21+k,5),Get("Sec-List",10+k,14),czSize); }
+            catch (InvalidOperationException ex) { throw new InvalidOperationException("Sec-List!N" + (10+k) + "：" + ex.Message,ex); }
             int listColumn = FindSectionListColumn(selection.ListName);
             if (listColumn < 0) throw new InvalidOperationException("Sheet1!CC" + row + " 对应的材料清单“" + selection.ListName
                 + "”在 List-all 第 2 行中未找到。请检查泵版本、轴承形式及轴承架号。");
             Put("Sheet1",row,77,selection.IsG ? "Y" : "N"); // BY
             Put("Sheet1",row,78,selection.LargeBearing ? "Y" : "N"); // BZ
             Put("Sheet1",row,79,selection.TemplateName); // CA, before material-dependent WO suffix
-            Put("Sheet1",row,80,Get("input",21+k,27)); // CB
+            Put("Sheet1",row,80,Get("Sec-List",10+k,14)); // CB
             Put("Sheet1",row,81,Get("List-all",2,listColumn)); // CC: return the matched row-2 cell, not the constructed search key.
             Put("Sheet1",row,82,czSize); // CD, also clear stale CZ data on other families
         }

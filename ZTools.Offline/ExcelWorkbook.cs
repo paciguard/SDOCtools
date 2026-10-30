@@ -7,18 +7,22 @@ using NPOI.SS.Util;
 namespace ZTools.Engine;
 
 // A deliberately limited Excel object model for the migrated VBA rules. All
-// reads and writes remain in the original BIFF8 workbook; no COM or Excel process.
+// calculations use the original BIFF8 model; projects save as XLSX without COM.
 public sealed class ExcelBook : IDisposable
 {
     internal readonly HSSFWorkbook Data;
     internal readonly IFormulaEvaluator Evaluator;
     internal readonly DataFormatter Formatter=new(CultureInfo.InvariantCulture);
+    readonly bool projectFormat;
     internal CancellationToken Cancellation{get;set;}
     public ExcelSheets Worksheets {get;}
     public ExcelApplication Application {get;}
-    public ExcelBook(Stream stream)
+    public ExcelBook(Stream stream,bool project=false)
     {
-        Data=new HSSFWorkbook(stream,true); // Preserve VBA and other OLE nodes.
+        var source=WorkbookFactory.Create(stream);
+        projectFormat=project||ProjectWorkbook.IsInputOnly(source);
+        if(projectFormat){try{Data=ProjectWorkbook.Materialize(source);}finally{source.Close();}}
+        else Data=(HSSFWorkbook)source;
         Evaluator=Data.GetCreationHelper().CreateFormulaEvaluator();
         Worksheets=new(this);Application=new(this);
     }
@@ -37,6 +41,7 @@ public sealed class ExcelBook : IDisposable
     }
     public void Save(string path)
     {
+        if(projectFormat){Cancellation.ThrowIfCancellationRequested();ProjectWorkbook.WriteInput(Data,path);return;}
         string pending=path+".saving";
         try{Cancellation.ThrowIfCancellationRequested();using(var output=new FileStream(pending,FileMode.Create,FileAccess.Write))Data.Write(output,true);Cancellation.ThrowIfCancellationRequested();File.Move(pending,path,true);}
         finally{if(File.Exists(pending))File.Delete(pending);}

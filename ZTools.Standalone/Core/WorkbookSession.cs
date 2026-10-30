@@ -7,9 +7,12 @@ namespace ZTools.Engine
 {
     internal sealed class WorkbookSession : IDisposable
     {
+        static WorkbookSession()=>System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
         internal dynamic Application { get; private set; }
         internal dynamic Book { get; private set; }
         internal string FilePath { get; }
+        private string workingDirectory,workingPath;
+        private byte[] projectHash;
         private static readonly string[] RequiredSheets = { "Sheet1", "input", "PID", "Sec-List", "Utility", "UtilityData", "Motor", "CZ", "ZA", "ZE7", "ZE", "ZF", "nozzle-load", "Data1", "CZ-BearingSize", "List-all", "List-detail" };
 
         public WorkbookSession(string path, bool visible)
@@ -20,6 +23,17 @@ namespace ZTools.Engine
                 throw new InvalidOperationException("请先新建项目副本，再编辑输入数据。");
             try
             {
+                workingPath=FilePath;
+                if(!visible)
+                {
+                    projectHash=System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(FilePath));
+                    using var source=new FileStream(FilePath,FileMode.Open,FileAccess.Read,FileShare.ReadWrite);
+                    using var original=NPOI.SS.UserModel.WorkbookFactory.Create(source);
+                    using var model=ProjectWorkbook.Materialize(original);
+                    workingDirectory=Path.Combine(Path.GetTempPath(),"CFL-SubmitTools-Workbooks",Guid.NewGuid().ToString("N"));
+                    Directory.CreateDirectory(workingDirectory);workingPath=Path.Combine(workingDirectory,"ZTools.xls");
+                    using var output=File.Create(workingPath);model.Write(output,true);
+                }
                 var type = Type.GetTypeFromProgID("Excel.Application");
                 if (type == null) throw new InvalidOperationException("读取工作簿内置数据库需要安装 Microsoft Excel 桌面版。");
                 Application = Activator.CreateInstance(type);
@@ -29,9 +43,9 @@ namespace ZTools.Engine
                 Application.AskToUpdateLinks = false;
                 Application.Visible = visible;
                 if (!visible) Application.IgnoreRemoteRequests = true;
-                Book = Application.Workbooks.Open(FilePath, UpdateLinks: 0, ReadOnly: false, Password: "123", WriteResPassword: "123", IgnoreReadOnlyRecommended: true);
+                Book = Application.Workbooks.Open(workingPath, UpdateLinks: 0, ReadOnly: false, Password: "123", WriteResPassword: "123", IgnoreReadOnlyRecommended: true);
                 if ((bool)Book.ReadOnly) throw new IOException("项目工作簿已被打开或锁定，请先关闭后再操作。");
-                foreach (string name in RequiredSheets) { dynamic sheet = Book.Worksheets[name]; Release((object)sheet); }
+                foreach (string name in visible?new[]{"input"}:RequiredSheets) { dynamic sheet = Book.Worksheets[name]; Release((object)sheet); }
                 // Manual Excel editing must retain its normal save/close prompts.
                 Application.DisplayAlerts = visible;
             }
@@ -44,7 +58,19 @@ namespace ZTools.Engine
             Book.Worksheets[sheetName].Visible = -1;
             Book.Worksheets[sheetName].Activate();
         }
-        internal void Save() { Book.Save(); }
+        internal void Save()
+        {
+            Book.Save();
+            if(workingDirectory==null)return;
+            using var saved=new FileStream(workingPath,FileMode.Open,FileAccess.Read,FileShare.ReadWrite);
+            using var model=new NPOI.HSSF.UserModel.HSSFWorkbook(saved,true);
+            using(var original=new FileStream(FilePath,FileMode.Open,FileAccess.Read,FileShare.Delete))
+            {
+                if(!System.Security.Cryptography.SHA256.HashData(original).SequenceEqual(projectHash))throw new IOException("项目 input 文件已被其他程序修改，未覆盖，请刷新后重试。");
+                ProjectWorkbook.WriteInput(model,FilePath);
+            }
+            projectHash=System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(FilePath));
+        }
         internal bool IsOpen
         {
             get
@@ -109,6 +135,7 @@ namespace ZTools.Engine
             }
             catch (Exception error) when (error is COMException || error is InvalidComObjectException) { System.Diagnostics.Trace.TraceWarning(error.ToString()); }
             finally { Release(application); }
+            if(workingDirectory!=null){try{Directory.Delete(workingDirectory,true);}catch(IOException){}catch(UnauthorizedAccessException){}workingDirectory=null;}
             // Do not wait for all process-wide COM finalizers on this STA.
             // Book/Application are explicitly closed and released above.
         }
@@ -136,8 +163,12 @@ namespace ZTools.Engine
         public static bool IsSourceWorkbook(string path)
         {
             string fullPath = Path.GetFullPath(path);
-            if (string.Equals(fullPath, SourceWorkbook, StringComparison.OrdinalIgnoreCase)) return true;
+            if(new[]{SourceWorkbook,Path.Combine(Root,"Referrings","Updates","ZTools-20261026.xls"),Path.Combine(Root,"Referrings","Updates","CFL-input-template-remote-20261027.xlsx"),Path.Combine(Root,"Referrings","CFL资料工具输入模板.xlsx"),Path.Combine(Root,"Resources","Workbooks","Input.xlsx"),Path.Combine(Root,"Resources","Workbooks","Input.xls"),Path.Combine(Root,"Resources","Workbooks","ZTools.xls")}.Any(source=>string.Equals(fullPath,source,StringComparison.OrdinalIgnoreCase)))return true;
             var folder = new DirectoryInfo(Path.GetDirectoryName(fullPath));
+            string file=Path.GetFileName(fullPath);
+            if(folder.Name.Equals("Referrings",StringComparison.OrdinalIgnoreCase)&&file.Equals("CFL资料工具输入模板.xlsx",StringComparison.OrdinalIgnoreCase))return true;
+            if(folder.Name.Equals("Updates",StringComparison.OrdinalIgnoreCase)&&string.Equals(folder.Parent?.Name,"Referrings",StringComparison.OrdinalIgnoreCase)&&file.Equals("ZTools-20261026.xls",StringComparison.OrdinalIgnoreCase))return true;
+            if(folder.Name.Equals("Workbooks",StringComparison.OrdinalIgnoreCase)&&string.Equals(folder.Parent?.Name,"Resources",StringComparison.OrdinalIgnoreCase)&&new[]{"Input.xls","Input.xlsx","ZTools.xls"}.Contains(file,StringComparer.OrdinalIgnoreCase))return true;
             return string.Equals(Path.GetFileName(fullPath), "ZTools.xls", StringComparison.OrdinalIgnoreCase)
                 && string.Equals(folder.Name, "Ztools", StringComparison.OrdinalIgnoreCase)
                 && string.Equals(folder.Parent?.Name, "Referrings", StringComparison.OrdinalIgnoreCase);
@@ -146,9 +177,7 @@ namespace ZTools.Engine
         {
             string path = Path.Combine(parent, "ZTools-" + DateTime.Now.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N").Substring(0, 6));
             Directory.CreateDirectory(path);
-            using (var template = TemplateResources.Open("ZTools.xls"))
-            using (var copy = new FileStream(Path.Combine(path, "ZTools.xls"), FileMode.CreateNew, FileAccess.Write))
-                template.CopyTo(copy);
+            ProjectWorkbook.Create(Path.Combine(path,"ZTools.xlsx"));
             return path;
         }
     }

@@ -17,3 +17,21 @@ for entry in manifest:
     assert path.stat().st_size == entry['bytes'], f'Original size changed: {path}'
     assert hashlib.sha256(path.read_bytes()).hexdigest() == entry['sha256'], f'Original hash changed: {path}'
 print(f'PASS: all {len(manifest)} original reference files are unchanged byte for byte.')
+split = root/'migration/workbook-split-20261026.json'
+if split.is_file():
+    provenance = json.loads(split.read_text(encoding='utf-8'))
+    for key, hash_key in [('source','sourceSha256'),('embedded','embeddedSha256'),('inputTemplate','inputTemplateSha256')]:
+        assert hashlib.sha256((root/provenance[key]).read_bytes()).hexdigest() == provenance[hash_key]
+    print('PASS: newer uploaded workbook and derived embedded model match their recorded hashes.')
+xlsx = root/'migration/input-xlsx-20261027.json'
+if xlsx.is_file():
+    provenance = json.loads(xlsx.read_text(encoding='utf-8-sig'))
+    for key, hash_key in [('source','sourceSha256'),('embedded','embeddedSha256')]:
+        assert hashlib.sha256((root/provenance[key]).read_bytes()).hexdigest() == provenance[hash_key]
+    from zipfile import ZipFile
+    with ZipFile(root/provenance['source']) as original, ZipFile(root/provenance['embedded']) as embedded:
+        assert set(original.namelist()) == set(embedded.namelist())
+        for name in original.namelist():
+            if name != 'xl/workbook.xml':
+                assert original.read(name) == embedded.read(name), name
+    print('PASS: original XLSX unchanged; embedded input cells, styles, dropdowns and other package parts are byte-identical.')

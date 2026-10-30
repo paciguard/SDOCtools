@@ -20,9 +20,17 @@ function Call-Api([string]$Command,$Body) {
 }
 if($Workbook){$state=Call-Api 'open' @{path=$Workbook}}else{$state=$initial.data}
 if($state.rows.Count -ne 6){throw 'Expected six supplied equipment rows'}
-foreach($group in 'equipment','motor','pid','materials'){
+foreach($group in 'equipment','motor','pid','materials','project','utility','results'){
     $form=Call-Api 'parameters' @{group=$group;row=0}
     if($form.fields.Count -lt 5){throw "Incomplete parameter form: $group"}
+    if($group -eq 'results' -and @($form.fields|Where-Object {-not $_.readOnly}).Count){throw 'Calculated result fields must be read-only'}
+    if($group -eq 'materials'){
+        foreach($address in 'F10','N10','O10'){
+            $entry=$form.fields|Where-Object {$_.address -eq $address}
+            if(-not $entry -or $entry.readOnly){throw "Missing editable Sec-List field: $address"}
+            if($address -ne 'O10' -and $entry.choices.Count -lt 2){throw "Missing Sec-List choices: $address"}
+        }
+    }
     $form|ConvertTo-Json -Depth 12|Set-Content (Join-Path $temp "form-$group.json") -Encoding UTF8
     $choices=($form.fields|Where-Object {$_.choices.Count -gt 0}).Count
     Write-Output "PASS $group fields=$($form.fields.Count) selectionFields=$choices"

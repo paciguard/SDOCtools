@@ -1,0 +1,17 @@
+# Input-only project workbooks and bearing-house material
+
+The owner supplied a newer workbook on 2026-10-26 and requested that only `input` remain in external project files. Internal Sec-List/PID/Utility sheets remain editable through application forms. All Sec-List inputs must determine the section drawing/material list.
+
+The upload is archived unchanged at `Referrings/Updates/ZTools-20261026.xls`. The previous `Referrings/Ztools/ZTools.xls` and original DWGs are unchanged. The reproducible builder at `tools/WorkbookTemplates` produces `Resources/Workbooks/ZTools.xls`, removing `map`, relabelling the supplied bearing-house material column O, and defaulting Sec-List grade F to the corresponding input grade when it was not a separate override. The JSON provenance record contains source/model SHA-256 hashes.
+
+Public project XLS files expose exactly one worksheet, `input`, including its original local dropdown lists and styling. Internal form values, calculation results and print settings are compressed into chunked document properties so they survive copy/import/reopen without a separate sidecar. No lookup/database worksheets or VBA are exported. The application always loads lookup tables/formulas from its embedded model. Old full workbooks are imported into separate input-only copies without modifying the old file.
+
+`Resources/Workbooks/Input.xls` is a separate clean input template prepared with Excel's native range export. Removing all the other sheets from the legacy full workbook produced a BIFF file rejected by desktop Excel despite being readable by NPOI, so public projects are created from the clean template instead. Cells, validation and formatting are retained; the obsolete Excel macro control-panel button is omitted. The application embeds this template too and prompts for a project save location. Derived projects were reopened in desktop Excel, and an Excel edit/save/reopen test confirmed that internal bearing-house parameters survived.
+
+Windows creates an application-private working workbook for Excel-backed operations and deletes it on session disposal. Manual Excel editing opens the public input sheet. The managed/mobile engine materializes the model in memory. Both save only the input project format. Calculation continues to use an isolated staged project and atomic publication; existing cancellation/concurrent-edit checks remain in place.
+
+Sec-List grade F now selects the material database column; explicit grade edits survive the legacy data-transfer step. G:M retain their per-part material overrides. N supplies bearing type for exact SEC/list resolution, defaulting to the linked input value. O overrides material on parts 330.01, 330.02 and 330.03. Blank overrides retain the selected grade's database values. Missing/ambiguous source data remains an error.
+
+The main workbench exposes project information, internal calculation results and Utility parameters in addition to the existing material and PID buttons, with prompts to select the equipment row. Calculated fields are read-only; unchanged form fields are not rewritten, preserving default formulas.
+
+Regression coverage includes input-only sheet count/dropdowns, parameter persistence after reopen, all existing six-pump/ZE7 calculations and DWG/PDF generation, an actual SEC DWG/PDF-scene bearing-house override, the generated material-table value, and rejection of an unsupported Sec-List bearing type.

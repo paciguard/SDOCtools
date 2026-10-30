@@ -8,7 +8,7 @@ internal sealed class WorkbookSession:IDisposable
  internal dynamic Book {get;}
  internal string FilePath {get;}
  private static readonly string[] RequiredSheets = { "Sheet1", "input", "PID", "Sec-List", "Utility", "UtilityData", "Motor", "CZ", "ZA", "ZE7", "ZE", "ZF", "nozzle-load", "Data1", "CZ-BearingSize", "List-all", "List-detail" };
- public WorkbookSession(string path,bool visible=false) {FilePath=Path.GetFullPath(path);if(Path.GetFileName(Path.GetDirectoryName(FilePath)).Equals("Ztools",StringComparison.OrdinalIgnoreCase)&&Path.GetFileName(Path.GetDirectoryName(Path.GetDirectoryName(FilePath))).Equals("Referrings",StringComparison.OrdinalIgnoreCase))throw new InvalidOperationException("请使用项目副本。");using var stream=File.OpenRead(FilePath);Book=new ExcelBook(stream);foreach(var name in RequiredSheets){var sheet=Book.Worksheets[name];}}
+ public WorkbookSession(string path,bool visible=false) {FilePath=Path.GetFullPath(path);if(Path.GetFileName(Path.GetDirectoryName(FilePath)).Equals("Ztools",StringComparison.OrdinalIgnoreCase)&&Path.GetFileName(Path.GetDirectoryName(Path.GetDirectoryName(FilePath))).Equals("Referrings",StringComparison.OrdinalIgnoreCase))throw new InvalidOperationException("请使用项目副本。");using var stream=File.OpenRead(FilePath);Book=new ExcelBook(stream,true);foreach(var name in RequiredSheets){var sheet=Book.Worksheets[name];}}
  internal string Cell(string sheet,string address)=>Vb.Text(Book.Worksheets[sheet].Range[address].Value2);
  internal void Save()=>Book.Save(FilePath);
          internal int ValidateInput()

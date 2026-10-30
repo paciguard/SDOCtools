@@ -17,7 +17,7 @@ namespace ZTools.Engine
     internal static class TemplateResources
     {
         private const string Prefix = "ZTools.Templates.";
-        private static readonly string[] Names = { "GA.dwg", "PID.dwg", "SEC.dwg", "ZTools.xls" };
+        private static readonly string[] Names = { "GA.dwg", "PID.dwg", "SEC.dwg", "ZTools.xls", "Input.xlsx" };
         private static readonly Lazy<IReadOnlyList<TemplateResourceInfo>> Catalog = new Lazy<IReadOnlyList<TemplateResourceInfo>>(() =>
             Array.AsReadOnly(Names.Select(name =>
             {

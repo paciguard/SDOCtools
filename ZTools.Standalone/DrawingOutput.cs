@@ -32,24 +32,33 @@ public static class DrawingOutput
     public static PlotScene Scene(CadDocument doc,SheetOptions frame)
     {
         var items=new List<PlotItem>();var unsupported=new HashSet<string>();
-        double[][] Points(IEnumerable<XYZ> points)=>points.Select(p=>new[]{p.X,p.Y}).ToArray();
-        void Visit(Entity entity,int depth=0)
+        void Visit(Entity entity,int depth=0,Func<XYZ,XYZ> placement=null)
         {
             if(depth>32)throw new InvalidOperationException("模板包含过深的嵌套图块。");
             if(entity.IsInvisible||entity.Layer is { IsOn:false })return;
             var layer=entity.Layer?.Name??"0";
-            void Path(IEnumerable<XYZ> points,bool closed=false,string type="path") {var p=Points(points);if(p.Length>1)items.Add(new(type,p,Layer:layer,Closed:closed));}
+            XYZ Map(XYZ p)=>placement==null?p:placement(p);
+            void Path(IEnumerable<XYZ> points,bool closed=false,string type="path") {var p=points.Select(Map).Select(p=>new[]{p.X,p.Y}).ToArray();if(p.Length>1)items.Add(new(type,p,Layer:layer,Closed:closed));}
             void Text(string value,XYZ p,double height,double rotation,bool top=false,string align="left",double widthFactor=1)
             {
                 if(string.IsNullOrWhiteSpace(value))return;
                 if(top)p=new XYZ(p.X+height*Math.Sin(rotation),p.Y-height*Math.Cos(rotation),p.Z);
+                var origin=Map(p);
+                var x=Map(p+new XYZ(Math.Cos(rotation),Math.Sin(rotation),0)*height*widthFactor)-origin;
+                var y=Map(p+new XYZ(-Math.Sin(rotation),Math.Cos(rotation),0)*height)-origin;
+                double textHeight=Math.Sqrt(y.X*y.X+y.Y*y.Y),textWidth=Math.Sqrt(x.X*x.X+x.Y*x.Y);
+                p=origin;rotation=Math.Atan2(x.Y,x.X);height=textHeight;widthFactor=textHeight>1e-10?textWidth/textHeight:1;
                 items.Add(new("text",new[]{new[]{p.X,p.Y}},value,Math.Max(.1,height),rotation,layer,Align:align,WidthFactor:widthFactor>0?widthFactor:1));
             }
             switch(entity)
             {
                 case Insert insert:
-                    foreach(var child in insert.Explode())Visit(child,depth+1);
-                    foreach(var attribute in insert.Attributes)Visit(attribute,depth+1);
+                    // Keep the original geometry and compose placements. Exploding
+                    // an insert leaves dimension-cache graphics in local space.
+                    var transform=CadAdapter.BlockTransform(insert);
+                    foreach(var child in insert.Block.Entities)Visit(child,depth+1,p=>Map(transform.ApplyTransform(p)));
+                    // Insert attributes are already in the owner's coordinates.
+                    foreach(var attribute in insert.Attributes)Visit(attribute,depth+1,placement);
                     break;
                 case AttributeDefinition: break;
                 case AttributeEntity attribute when (((int)attribute.Flags)&1)!=0:break;
@@ -84,10 +93,10 @@ public static class DrawingOutput
                 case Polyline2D poly:Path(Polyline(poly.Vertices.Select(v=>(v.Location,v.Bulge)).ToArray(),poly.IsClosed),poly.IsClosed);break;
                 case Hatch hatch:
                     if(hatch.IsSolid) foreach(var boundary in hatch.Paths)Path(boundary.GetPoints(128),true,"fill");
-                    else foreach(var line in hatch.ExplodePattern())Visit(line,depth+1);
+                    else foreach(var line in hatch.ExplodePattern())Visit(line,depth+1,placement);
                     break;
                 case Dimension dimension when dimension.Block!=null:
-                    foreach(var child in new Insert(dimension.Block).Explode())Visit(child,depth+1);break;
+                    foreach(var child in dimension.Block.Entities)Visit(child,depth+1,placement);break;
                 case Solid solid:Path(new[]{solid.FirstCorner,solid.SecondCorner,solid.FourthCorner,solid.ThirdCorner},true,"fill");break;
                 case Spline spline:Path(spline.PolygonalVertexes(128));break;
                 case ACadSharp.Entities.Point:break;
@@ -193,21 +202,23 @@ public static class DrawingOutput
                 if(kind=="GA")engine.BuildGA();else if(kind=="PID")engine.BuildPID();else engine.BuildSEC();
                 if(kind=="PID")foreach(var e in document.Entities.ToArray())
                 {var box=e.GetBoundingBox();if(box.Min.X<-.01||box.Min.Y<-.01||box.Max.X>420.01||box.Max.Y>297.01)document.Entities.Remove(e);}
-                var scene=Scene(document,options);
                 string dir=Path.Combine(folder,kind);Directory.CreateDirectory(dir);string stem=Path.Combine(dir,name);
                 if(File.Exists(stem+".dwg"))throw new InvalidOperationException("输出文件名重复："+name);
-                Pdf(stem+".pdf",scene);
                 document.Header.Version=ACadVersion.AC1032;DwgWriter.Write(stem+".dwg",document);
                 // Reopen the actual saved DWG to verify serialization before announcing success.
                 var check=DwgReader.Read(stem+".dwg");if(check.Entities.Count()!=document.Entities.Count())throw new InvalidOperationException("DWG 保存后实体数量校验失败。");
                 string equipment=book.Cell("Sheet1","B"+(40+k));
                 if(!check.Entities.OfType<Insert>().SelectMany(i=>i.Attributes).Any(a=>a.Tag.Equals("SHEBEIWEIHAO",StringComparison.OrdinalIgnoreCase)&&a.Value==equipment))throw new InvalidOperationException("DWG 设备位号校验失败。");
+                // Export only after final placement has been saved and reopened,
+                // so preview/PDF geometry comes from the actual delivered DWG.
+                var scene=Scene(check,options);
                 if(!scene.Items.Any(i=>i.Type=="text"&&i.Text==equipment))throw new InvalidOperationException("PDF 设备位号校验失败。");
                 if(kind=="SEC")
                 {
                     string firstPart=book.Cell("Sheet1","DB72");
                     if(!check.Entities.OfType<Insert>().SelectMany(i=>i.Attributes).Any(a=>a.Tag.Equals("PN1",StringComparison.OrdinalIgnoreCase)&&a.Value==firstPart))throw new InvalidOperationException("DWG 材料明细校验失败。");
                 }
+                Pdf(stem+".pdf",scene);
                 File.WriteAllText(stem+".scene.json",JsonSerializer.Serialize(scene,JsonOptions));
                 report(kind+" 第 "+(k+1)+" 台："+stem);
             }

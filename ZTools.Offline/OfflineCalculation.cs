@@ -26,7 +26,7 @@ public sealed partial class OfflineProject
         string folder=Path.Combine(Path.GetDirectoryName(workbook),".cfl-calculation-"+Guid.NewGuid().ToString("N"));
         try
         {
-            Directory.CreateDirectory(folder);string staged=Path.Combine(folder,"ZTools.xls");
+            Directory.CreateDirectory(folder);string staged=Path.Combine(folder,Path.GetFileName(workbook));
             byte[] before=SHA256.HashData(System.IO.File.ReadAllBytes(workbook));System.IO.File.Copy(workbook,staged);
             void Progress(string text){cancellation.Token.ThrowIfCancellationRequested();Volatile.Write(ref lastProgress,Stopwatch.GetTimestamp());Report(text);}
             Progress("正在读取项目计算副本……");OfflineState result;
