@@ -41,15 +41,16 @@ inventory = json.loads(inspection.stdout)
 assert len(inventory) == 5
 source_entries = json.loads((root/args.manifest).read_text(encoding='utf-8'))
 for asset in inventory:
-    if asset['name'] in {'ZTools.xls', 'Input.xlsx'}:
-        model = root/'Resources/Workbooks'/asset['name']
-        assert asset['sha256'] == hashlib.sha256(model.read_bytes()).hexdigest()
-        assert asset['bytes'] == model.stat().st_size
+    if asset['name'] in {'GA.dwg', 'ZTools.xls', 'Input.xlsx'}:
+        directory = 'Drawings' if asset['name'] == 'GA.dwg' else 'Workbooks'
+        resource = root/'Resources'/directory/asset['name']
+        assert asset['sha256'] == hashlib.sha256(resource.read_bytes()).hexdigest()
+        assert asset['bytes'] == resource.stat().st_size
         continue
-    relative = 'Referrings/Ztools/' + ('' if asset['name'] == 'ZTools.xls' else 'TEMPLATE/') + asset['name']
+    relative = 'Referrings/Ztools/TEMPLATE/' + asset['name']
     expected = next(e for e in source_entries if e['path'] == relative)
     assert asset['sha256'] == expected['sha256'] and asset['bytes'] == expected['bytes'], relative
-print('PASS: published application embeds the three original DWGs and split-workbook model; no external business templates are packaged.')
+print('PASS: published application embeds the three DWG templates and split-workbook model; no external business templates are packaged.')
 for name in ['ACadSharp-LICENSE.txt','PDFsharp-LICENSE.txt','three-LICENSE.txt']:
     assert (package/'licenses'/name).is_file(), name
 assert (package/'ZTools.Calculation.dll').is_file()

@@ -182,3 +182,35 @@ seventh.SaveParameters("equipment",1,new[]{new InputChange("input","N22","ZE80-2
 bool missingRejected=false;try{seventh.Calculate();}catch(InvalidOperationException ex){missingRejected=ex.Message.Contains("ZE80-2200");}
 if(!missingRejected)throw new Exception("A missing ZE7 model must fail instead of using ZE");
 Console.WriteLine("ZE7_GA_REGRESSION_OK Chinese/legacy editions, mixed ZE/ZE7/ZA rows, 13 dimensions, weights, f, DWG/PDF and missing-record rejection");
+
+// Exercise both the existing CZ database lookup and the GA block selection.
+var anchorFolder = Path.Combine(folder, "anchor-bolt-regression", Guid.NewGuid().ToString("N"));
+Directory.CreateDirectory(anchorFolder);
+var anchorWorkbook = Path.Combine(anchorFolder, "ZTools.xlsx");
+File.Copy(app.Workbook, anchorWorkbook);
+string anchorOutput;
+using (var session = new WorkbookSession(anchorWorkbook))
+{
+    var input = session.Book.Worksheets["input"];
+    input.Range["N26"].Value2 = "CZ32-250";
+    input.Range["U26"].Value2 = "180M";
+    input.Range["AA26"].Value2 = "CZ轻轴";
+    session.Book.Worksheets["Sec-List"].Range["N15"].Value2 = "CZ轻轴";
+    new SubmissionEngine(session, _ => {}).Calculate();
+    if (session.Cell("Sheet1", "AT45") != "4-M16x300")
+        throw new Exception("The CZ32-250/180M database row did not return its M16x300 anchor bolt.");
+    anchorOutput = DrawingOutput.Generate(session, new[] { "GA" }, new[] { 5 }, new SheetOptions(), _ => {});
+}
+string anchorDrawing = Directory.GetFiles(Path.Combine(anchorOutput, "GA"), "*.dwg").Single();
+var savedAnchorDrawing = DwgReader.Read(anchorDrawing);
+var insertedBolt = savedAnchorDrawing.Entities.OfType<Insert>().Single(insert => insert.Block.Name == "M16X300");
+var insertedLength = insertedBolt.Block.Entities.OfType<Dimension>().Single(dimension => dimension.Text == "300");
+if (insertedLength.Block.Entities.OfType<MText>().Single().PlainText != "300")
+    throw new Exception("The saved M16X300 detail has stale dimension graphics.");
+var anchorScene = JsonSerializer.Deserialize<PlotScene>(
+    File.ReadAllText(Path.ChangeExtension(anchorDrawing, ".scene.json")), DrawingOutput.JsonOptions);
+var anchorText = anchorScene.Items.Where(item => item.Text == "M16" || item.Text == "300");
+if (!anchorText.Any(item => item.Text == "M16" && item.Points[0][0] > 290)
+    || !anchorText.Any(item => item.Text == "300" && item.Points[0][0] > 290))
+    throw new Exception("The GA PDF scene does not display the M16 × 300 anchor detail.");
+Console.WriteLine("PASS M16X300 selects the new GA block and displays 300 in the saved DWG and PDF scene: " + anchorOutput);

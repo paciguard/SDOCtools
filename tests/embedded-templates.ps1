@@ -13,6 +13,11 @@ if(-not $inspect.WaitForExit(30000) -or $inspect.ExitCode -ne 0){throw 'Could no
 $assets=@(Get-Content $inventoryFile -Raw|ConvertFrom-Json)
 if($assets.Count -ne 5){throw 'Expected three embedded DWGs and two workbook templates.'}
 foreach($asset in $assets){
+    if($asset.name -eq 'GA.dwg'){
+        $derived=Get-Item -LiteralPath (Join-Path $root 'Resources/Drawings/GA.dwg')
+        if($asset.sha256 -ne (Get-FileHash -LiteralPath $derived.FullName).Hash.ToLowerInvariant() -or $asset.bytes -ne $derived.Length){throw 'Embedded GA differs from its derived source.'}
+        continue
+    }
     if($asset.name -in 'ZTools.xls','Input.xlsx'){
         if($asset.sha256 -ne (Get-FileHash (Join-Path $root ('Resources\Workbooks\'+$asset.name))).Hash.ToLowerInvariant()){throw 'Embedded workbook differs from its generated source.'}
         continue
@@ -20,7 +25,7 @@ foreach($asset in $assets){
     $original=$manifest|Where-Object {$_.path -eq ('Referrings/Ztools/'+$asset.name) -or $_.path -eq ('Referrings/Ztools/TEMPLATE/'+$asset.name)}
     if(@($original).Count -ne 1 -or $asset.sha256 -ne $original.sha256 -or $asset.bytes -ne $original.bytes){throw "Embedded bytes differ from the source: $($asset.name)"}
 }
-Write-Host 'PASS all five embedded hashes match the three original DWGs and generated workbook templates'
+Write-Host 'PASS all five embedded hashes match the checked-in templates'
 $probeLog=Join-Path $detached 'probe.log'
 $probe=Start-Process $exe -ArgumentList '--probe' -WorkingDirectory $detached -WindowStyle Hidden -PassThru -RedirectStandardOutput $probeLog -RedirectStandardError (Join-Path $detached 'probe.err')
 if(-not $probe.WaitForExit(120000) -or $probe.ExitCode -ne 0){Get-Content (Join-Path $detached 'probe.err');throw 'Embedded template probe failed.'}
