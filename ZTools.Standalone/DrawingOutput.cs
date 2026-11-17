@@ -5,6 +5,7 @@ using CSMath;
 using PdfSharp.Drawing;
 using PdfSharp.Pdf;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using ZTools.Engine;
 
 namespace ZTools.Standalone;
@@ -13,7 +14,8 @@ public sealed record SheetOptions(double MinX=0,double MinY=0,double MaxX=420,do
 {
     public void Validate() { if(!double.IsFinite(MinX+MinY+MaxX+MaxY+Margin)||MaxX<=MinX||MaxY<=MinY||Margin<0||Margin>40||Copies<1||Copies>99)throw new InvalidOperationException("打印窗口、页边距或份数无效。"); }
 }
-public sealed record PlotItem(string Type,double[][] Points,string Text=null,double Height=0,double Angle=0,string Layer="0",bool Closed=false,string Align="left",double WidthFactor=1);
+public sealed record PlotItem(string Type,double[][] Points,string Text=null,double Height=0,double Angle=0,string Layer="0",bool Closed=false,string Align="left",double WidthFactor=1,
+    [property: JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] string ImageBase64=null);
 public sealed record PlotScene(List<PlotItem> Items,List<string> Unsupported,SheetOptions Frame);
 
 public static class DrawingOutput
@@ -100,6 +102,21 @@ public static class DrawingOutput
                 case Solid solid:Path(new[]{solid.FirstCorner,solid.SecondCorner,solid.FourthCorner,solid.ThirdCorner},true,"fill");break;
                 case Spline spline:Path(spline.PolygonalVertexes(128));break;
                 case ACadSharp.Entities.Point:break;
+                case Ole2Frame ole:
+                    var image = SectionDetailImages.GetImage(ole);
+                    if (image == null)
+                    {
+                        unsupported.Add(nameof(Ole2Frame));
+                        break;
+                    }
+                    var topLeft = ole.UpperLeftCorner;
+                    var bottomRight = ole.LowerRightCorner;
+                    var topRight = new XYZ(bottomRight.X, topLeft.Y, topLeft.Z);
+                    var bottomLeft = new XYZ(topLeft.X, bottomRight.Y, bottomRight.Z);
+                    var corners = new[] { topLeft, topRight, bottomLeft }
+                        .Select(Map).Select(p => new[] { p.X, p.Y }).ToArray();
+                    items.Add(new PlotItem("image", corners, Layer: layer, ImageBase64: image));
+                    break;
                 default:unsupported.Add(entity.GetType().Name);break;
             }
         }
@@ -158,7 +175,19 @@ public static class DrawingOutput
             double oy=(page.Height.Point-(scene.Frame.MaxY-scene.Frame.MinY)*scale)/2;
             XPoint Map(double[] p)=>new(ox+(p[0]-scene.Frame.MinX)*scale,page.Height.Point-oy-(p[1]-scene.Frame.MinY)*scale);
             gfx.IntersectClip(new XRect(ox,oy,(scene.Frame.MaxX-scene.Frame.MinX)*scale,(scene.Frame.MaxY-scene.Frame.MinY)*scale));
-            foreach(var item in scene.Items)
+            foreach (var item in scene.Items.Where(i => i.Type == "image"))
+            {
+                var origin = Map(item.Points[0]);
+                var right = Map(item.Points[1]) - origin;
+                var down = Map(item.Points[2]) - origin;
+                using var stream = new MemoryStream(Convert.FromBase64String(item.ImageBase64));
+                using var image = XImage.FromStream(stream);
+                var saved = gfx.Save();
+                gfx.MultiplyTransform(new XMatrix(right.X, right.Y, down.X, down.Y, origin.X, origin.Y));
+                gfx.DrawImage(image, 0, 0, 1, 1);
+                gfx.Restore(saved);
+            }
+            foreach(var item in scene.Items.Where(i => i.Type != "image"))
             {
                 var points=item.Points.Select(Map).ToArray();
                 if(item.Type=="text")

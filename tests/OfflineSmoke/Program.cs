@@ -203,7 +203,7 @@ using (var session = new WorkbookSession(anchorWorkbook))
         if (session.Cell("Sheet1", "AT45") != $"4-{diameter}x{length}")
             throw new Exception($"The CZ32-250/{baseplate} database row did not return its {blockName} anchor bolt.");
 
-        string anchorOutput = DrawingOutput.Generate(session, new[] { "GA" }, new[] { 5 }, new SheetOptions(), _ => {});
+        string anchorOutput = DrawingOutput.Generate(session, new[] { "GA", "SEC" }, new[] { 5 }, new SheetOptions(), _ => {});
         string anchorDrawing = Directory.GetFiles(Path.Combine(anchorOutput, "GA"), "*.dwg").Single();
         var savedAnchorDrawing = DwgReader.Read(anchorDrawing);
         var insertedBolt = savedAnchorDrawing.Entities.OfType<Insert>().Single(insert => insert.Block.Name == blockName);
@@ -217,5 +217,26 @@ using (var session = new WorkbookSession(anchorWorkbook))
             || !anchorScene.Items.Any(item => item.Text == length && item.Points[0][0] > 290))
             throw new Exception($"The GA PDF scene does not display the {blockName} anchor detail.");
         Console.WriteLine($"PASS {blockName} selects the new GA block and displays {length} in the saved DWG and PDF scene: {anchorOutput}");
+
+        string sectionDrawing = Directory.GetFiles(Path.Combine(anchorOutput, "SEC"), "*.dwg").Single();
+        var section = DwgReader.Read(sectionDrawing);
+        var sectionBlock = section.Entities.OfType<Insert>().Single(insert => insert.Block.Name == "CZWOBALHS");
+        if (sectionBlock.Block.Entities.OfType<Ole2Frame>().Count() != 2)
+            throw new Exception("The generated CZ section DWG lost its embedded detail drawings.");
+        var sectionScene = JsonSerializer.Deserialize<PlotScene>(
+            File.ReadAllText(Path.ChangeExtension(sectionDrawing, ".scene.json")), DrawingOutput.JsonOptions);
+        var details = sectionScene.Items.Where(item => item.Type == "image").ToArray();
+        if (sectionScene.Unsupported.Count != 0 || details.Length != 2 || details.Any(item => string.IsNullOrEmpty(item.ImageBase64))
+            || details[0].ImageBase64 == details[1].ImageBase64 || new FileInfo(Path.ChangeExtension(sectionDrawing, ".pdf")).Length == 0)
+            throw new Exception("The generated CZ section PDF and preview did not include both different OLE detail images.");
     }
 }
+
+var czTemplate = DrawingOutput.ReadTemplate("SEC", new List<string>());
+foreach (var name in new[] { "CZWBALHS", "CZWBALHD", "CZWBALHL", "CZWOBALHS", "CZWOBALHD" })
+{
+    var frames = czTemplate.BlockRecords[name].Entities.OfType<Ole2Frame>().ToArray();
+    if (frames.Length != 2 || frames.Any(frame => SectionDetailImages.GetImage(frame) == null))
+        throw new Exception($"The CZ section preview assets do not cover both OLE frames in {name}.");
+}
+Console.WriteLine("PASS CZ section DWG retains the OLE inserts and PDF/preview include both detail images; all five source CZ blocks covered");

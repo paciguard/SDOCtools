@@ -15,6 +15,7 @@
     <Content Update="wwwroot\**\*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <EmbeddedResource Include="..\Resources\Drawings\GA.dwg;..\Referrings\Ztools\TEMPLATE\PID.dwg;..\Referrings\Ztools\TEMPLATE\SEC.dwg;..\Resources\Workbooks\ZTools.xls" LogicalName="ZTools.Templates.%(Filename)%(Extension)" />
     <EmbeddedResource Include="..\Resources\Workbooks\Input.xlsx" LogicalName="ZTools.Templates.Input.xlsx" />
+    <EmbeddedResource Include="..\Resources\Drawings\SectionDetails\*.png" LogicalName="ZTools.SectionDetails.%(Filename)%(Extension)" />
   </ItemGroup>
   <Target Name="CloseOwnApplicationBeforeBuild" BeforeTargets="CoreClean;PrepareForBuild" Condition="'$(DesignTimeBuild)' != 'true' and '$(OS)' == 'Windows_NT'">
     <Exec Command="powershell.exe -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\..\tools\prepare-build.ps1&quot; -OutputDirectory &quot;$(TargetDir).&quot;" />
